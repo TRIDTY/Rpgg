@@ -20,6 +20,11 @@ Para conectar ao backend real:
 VITE_WS_URL=ws://localhost:8080/ws npm run dev
 ```
 
+## Demo para celular (arquivo único)
+
+`npm run build:demo` gera `../demo/inventario-demo.html`, um HTML autocontido (JS + CSS embutidos, cliente mock).
+Basta baixar o arquivo no celular e abrir com o Chrome (Android) — não precisa de servidor.
+
 ## Estrutura
 
 ```
