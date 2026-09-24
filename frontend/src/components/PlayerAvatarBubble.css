@@ -1,0 +1,122 @@
+.avatar-bubble {
+  --bubble: clamp(48px, 12vmin, 72px);
+  --role-color: rgba(255, 255, 255, 0.25);
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 6px 2px;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.avatar-bubble:active {
+  transform: scale(0.94);
+}
+
+.avatar-bubble--player {
+  --role-color: var(--accent);
+}
+.avatar-bubble--master {
+  --role-color: #c67dff;
+}
+.avatar-bubble--merchant {
+  --role-color: var(--gold);
+}
+
+.avatar-bubble__ring {
+  position: relative;
+  width: var(--bubble);
+  height: var(--bubble);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(16, 12, 30, 0.95));
+  border: 2px solid var(--role-color);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.avatar-bubble__face {
+  font-size: calc(var(--bubble) * 0.55);
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.avatar-bubble__status {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: calc(var(--bubble) * 0.24);
+  height: calc(var(--bubble) * 0.24);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  background: #6b6b7a;
+}
+
+.avatar-bubble--online .avatar-bubble__status {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.avatar-bubble--offline .avatar-bubble__ring {
+  filter: grayscale(0.8);
+  opacity: 0.6;
+}
+
+.avatar-bubble__name {
+  font-size: 12px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.avatar-bubble--droppable .avatar-bubble__ring {
+  animation: bubble-pulse 1.2s ease-in-out infinite;
+}
+
+.avatar-bubble--over .avatar-bubble__ring {
+  animation: none;
+  transform: scale(1.22);
+  border-color: var(--success);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 6px rgba(120, 255, 170, 0.25),
+    0 0 32px 6px rgba(120, 255, 170, 0.55);
+}
+
+.avatar-bubble--over .avatar-bubble__name {
+  color: var(--success);
+}
+
+@keyframes bubble-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.5),
+      0 0 0 0 rgba(120, 255, 170, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.5),
+      0 0 0 8px rgba(120, 255, 170, 0);
+  }
+}
