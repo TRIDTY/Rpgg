@@ -10,6 +10,14 @@
   box-sizing: border-box;
 }
 
+.app--with-bar {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app__bar {
+  grid-column: 1 / -1;
+}
+
 .app__inventory,
 .app__sidebar {
   min-height: 0;

@@ -37,6 +37,59 @@ export interface Actor {
   equipped: Item[]
 }
 
+// ---------------------------------------------------------------------------
+// Personagem (documento JSON persistido localmente — o "save game" do jogador)
+// ---------------------------------------------------------------------------
+
+export type PlayerId = string
+export type PlayerRole = 'Player' | 'GM'
+
+export type AttributeValue = string | number | boolean
+
+export interface CharacterProfile {
+  PlayerId: PlayerId
+  Name: string
+  Role: PlayerRole
+  Avatar: string
+  Title?: string
+  Level: number
+  Attributes: Record<string, AttributeValue>
+  Inventory: InventorySlot[]
+  CreatedAt: string
+  UpdatedAt: string
+}
+
+// ---------------------------------------------------------------------------
+// Sala / sessão local (o Host é a fonte da verdade)
+// ---------------------------------------------------------------------------
+
+export interface RoomInfo {
+  roomId: string
+  name: string
+  host: string
+  port: number
+  password: string
+}
+
+export interface GameSession {
+  roomId: string
+  name: string
+  password: string
+  hostId: PlayerId
+  createdAt: string
+  members: Record<PlayerId, SessionMember>
+}
+
+export interface SessionMember {
+  profile: CharacterProfile
+  online: boolean
+  joinedAt: string
+}
+
+// ---------------------------------------------------------------------------
+// Eventos Host -> Cliente
+// ---------------------------------------------------------------------------
+
 export interface InventoryUpdatedEvent {
   type: 'InventoryUpdatedEvent'
   ownerId: ActorId
@@ -49,7 +102,48 @@ export interface ActorPresenceEvent {
   online: boolean
 }
 
-export type ServerEvent = InventoryUpdatedEvent | ActorPresenceEvent
+export interface SessionUpdatedEvent {
+  type: 'SessionUpdatedEvent'
+  roomName: string
+  actors: Actor[]
+}
+
+export interface JoinAcceptedEvent {
+  type: 'JoinAccepted'
+  playerId: PlayerId
+  roomName: string
+  actors: Actor[]
+  inventory: InventorySlot[]
+}
+
+export interface JoinRejectedEvent {
+  type: 'JoinRejected'
+  reason: string
+}
+
+export interface ItemReceivedEvent {
+  type: 'ItemReceivedEvent'
+  fromId: ActorId
+  item: Item
+}
+
+export type ServerEvent =
+  | InventoryUpdatedEvent
+  | ActorPresenceEvent
+  | SessionUpdatedEvent
+  | JoinAcceptedEvent
+  | JoinRejectedEvent
+  | ItemReceivedEvent
+
+// ---------------------------------------------------------------------------
+// Comandos Cliente -> Host
+// ---------------------------------------------------------------------------
+
+export interface JoinRoomCommand {
+  type: 'JoinRoom'
+  password: string
+  character: CharacterProfile
+}
 
 export interface MoveItemCommand {
   type: 'MoveItem'
@@ -63,4 +157,4 @@ export interface InitiateTradeCommand {
   targetPlayerId: ActorId
 }
 
-export type ClientCommand = MoveItemCommand | InitiateTradeCommand
+export type ClientCommand = JoinRoomCommand | MoveItemCommand | InitiateTradeCommand

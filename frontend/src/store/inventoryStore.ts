@@ -1,47 +1,61 @@
 import { create } from 'zustand'
 import type { Actor, ActorId, InventorySlot, InventoryUpdatedEvent, Item, ItemId } from '../types'
-import { buildInitialSlots, INITIAL_ACTORS, INVENTORY_CAPACITY, SELF_ID } from '../data/mockData'
+import { INVENTORY_CAPACITY } from '../data/mockData'
+import { emptyInventory } from '../domain/character'
+import { moveItem as moveItemOp } from '../domain/inventory'
+
+export interface Notice {
+  id: number
+  text: string
+}
 
 interface InventoryState {
   selfId: ActorId
+  self: Actor | null
+  roomName: string
   capacity: number
   slots: InventorySlot[]
   actors: Actor[]
   connected: boolean
+  notices: Notice[]
 
+  hydrate: (input: { selfId: ActorId; roomName: string; slots: InventorySlot[]; actors: Actor[] }) => void
   moveItem: (fromSlot: number, toSlot: number) => void
   applyInventoryUpdated: (event: InventoryUpdatedEvent) => void
+  setActors: (actors: Actor[]) => void
   setActorOnline: (actorId: ActorId, online: boolean) => void
   setConnected: (connected: boolean) => void
+  pushNotice: (text: string) => void
+  dismissNotice: (id: number) => void
+  reset: () => void
 }
 
+let noticeSeq = 0
+
 export const useInventoryStore = create<InventoryState>((set) => ({
-  selfId: SELF_ID,
+  selfId: '',
+  self: null,
+  roomName: '',
   capacity: INVENTORY_CAPACITY,
-  slots: buildInitialSlots(),
-  actors: INITIAL_ACTORS,
+  slots: emptyInventory(),
+  actors: [],
   connected: false,
+  notices: [],
+
+  hydrate: ({ selfId, roomName, slots, actors }) =>
+    set({
+      selfId,
+      self: actors.find((a) => a.id === selfId) ?? null,
+      roomName,
+      slots,
+      capacity: slots.length,
+      actors: actors.filter((a) => a.id !== selfId),
+    }),
 
   moveItem: (fromSlot, toSlot) =>
     set((state) => {
-      if (fromSlot === toSlot) return state
-      const slots = state.slots.map((s) => ({ ...s }))
-      const source = slots[fromSlot]
-      const target = slots[toSlot]
-      if (!source?.item || !target) return state
-
-      if (target.item && target.item.id === source.item.id && target.item.maxStack > 1) {
-        const room = target.item.maxStack - target.item.quantity
-        const moved = Math.min(room, source.item.quantity)
-        target.item = { ...target.item, quantity: target.item.quantity + moved }
-        const remaining = source.item.quantity - moved
-        source.item = remaining > 0 ? { ...source.item, quantity: remaining } : null
-      } else {
-        const swapped = target.item
-        target.item = source.item
-        source.item = swapped
-      }
-      return { slots }
+      const change = moveItemOp(state.slots, fromSlot, toSlot)
+      return change ? { slots: change.slots } : state
     }),
 
   applyInventoryUpdated: (event) =>
@@ -56,12 +70,25 @@ export const useInventoryStore = create<InventoryState>((set) => ({
       return { slots }
     }),
 
+  setActors: (actors) => set((state) => ({ actors: actors.filter((a) => a.id !== state.selfId) })),
+
   setActorOnline: (actorId, online) =>
     set((state) => ({
       actors: state.actors.map((a) => (a.id === actorId ? { ...a, online } : a)),
     })),
 
   setConnected: (connected) => set({ connected }),
+
+  pushNotice: (text) => {
+    const id = ++noticeSeq
+    set((state) => ({ notices: [...state.notices, { id, text }] }))
+    setTimeout(() => useInventoryStore.getState().dismissNotice(id), 4000)
+  },
+
+  dismissNotice: (id) => set((state) => ({ notices: state.notices.filter((n) => n.id !== id) })),
+
+  reset: () =>
+    set({ selfId: '', self: null, roomName: '', slots: emptyInventory(), actors: [], connected: false, notices: [] }),
 }))
 
 export const selectItemById = (itemId: ItemId) => (state: InventoryState): Item | undefined =>
