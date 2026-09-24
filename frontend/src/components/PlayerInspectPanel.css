@@ -1,0 +1,114 @@
+.inspect__hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.inspect__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(16, 12, 30, 0.95));
+  border: 3px solid var(--accent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.inspect__avatar--master {
+  border-color: #c67dff;
+}
+.inspect__avatar--merchant {
+  border-color: var(--gold);
+}
+
+.inspect__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inspect__role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 800;
+}
+
+.inspect__title {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.inspect__level {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.inspect__status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.inspect__status.is-online {
+  color: var(--success);
+}
+
+.inspect__section {
+  margin: 20px 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.inspect__equipped {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.inspect__equip {
+  --rarity-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--rarity-color);
+}
+
+.inspect__equip--uncommon {
+  --rarity-color: #5dd28a;
+}
+.inspect__equip--rare {
+  --rarity-color: #5ab8ff;
+}
+.inspect__equip--epic {
+  --rarity-color: #c67dff;
+}
+.inspect__equip--legendary {
+  --rarity-color: var(--gold);
+}
+
+.inspect__equip-icon {
+  font-size: 24px;
+}
+
+.inspect__equip-name {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.inspect__empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}

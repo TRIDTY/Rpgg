@@ -1,0 +1,76 @@
+.session-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(30, 24, 54, 0.85), rgba(14, 10, 26, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.session-sidebar__conn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.session-sidebar__conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b6b7a;
+}
+
+.session-sidebar__conn.is-on {
+  color: var(--success);
+}
+
+.session-sidebar__conn.is-on .session-sidebar__conn-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: conn-blink 2s ease-in-out infinite;
+}
+
+.session-sidebar__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 6px;
+  scrollbar-width: none;
+}
+
+.session-sidebar__list::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes conn-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-sidebar__conn-label {
+    display: none;
+  }
+}
