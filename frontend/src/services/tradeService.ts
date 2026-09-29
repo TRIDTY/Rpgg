@@ -1,4 +1,4 @@
-import type { ActorId, ItemId } from '../types'
+import type { ActorId, ItemId, NewItemInput, PlayerId } from '../types'
 import { useRoomStore } from '../store/roomStore'
 
 /**
@@ -14,4 +14,14 @@ export function InitiateTrade(itemId: ItemId, targetPlayerId: ActorId) {
 export function MoveItem(fromSlot: number, toSlot: number) {
   console.log(`MoveItem(${fromSlot}, ${toSlot})`)
   useRoomStore.getState().sendCommand({ type: 'MoveItem', fromSlot, toSlot })
+}
+
+/**
+ * Mestre forja um item no slot vazio indicado. O Host gera o UUID, insere no
+ * inventário do dono (próprio ou de um jogador) e emite InventoryUpdatedEvent
+ * para o aparelho dele, que persiste o JSON local.
+ */
+export function CreateItem(ownerId: PlayerId, slotIndex: number, item: NewItemInput) {
+  console.log(`CreateItem(${ownerId}, ${slotIndex}, ${item.name})`)
+  useRoomStore.getState().sendCommand({ type: 'CreateItem', ownerId, slotIndex, item })
 }

@@ -7,6 +7,8 @@ interface Props {
   onClose: () => void
   /** Ferramenta do Mestre: entrega um item aleatório do catálogo ao ator. */
   onGiveLoot?: (actor: Actor) => void
+  /** Ferramenta do Mestre: abre a mochila do jogador para editar/forjar itens. */
+  onOpenInventory?: (actor: Actor) => void
 }
 
 const ROLE_LABEL: Record<Actor['role'], string> = {
@@ -15,7 +17,7 @@ const ROLE_LABEL: Record<Actor['role'], string> = {
   merchant: 'NPC Mercador',
 }
 
-export function PlayerInspectPanel({ actor, onClose, onGiveLoot }: Props) {
+export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory }: Props) {
   const canSeeEquipment = actor.role !== 'master'
 
   return (
@@ -51,10 +53,19 @@ export function PlayerInspectPanel({ actor, onClose, onGiveLoot }: Props) {
           <p className="inspect__empty">O Mestre não expõe equipamentos.</p>
         )}
 
-        {onGiveLoot && actor.role === 'player' && (
-          <button type="button" className="btn btn--gold" onClick={() => onGiveLoot(actor)} style={{ marginTop: 14 }}>
-            🎁 Dar loot para {actor.name}
-          </button>
+        {actor.role === 'player' && (onGiveLoot || onOpenInventory) && (
+          <div className="btn-row">
+            {onOpenInventory && (
+              <button type="button" className="btn" onClick={() => onOpenInventory(actor)}>
+                🎒 Abrir mochila
+              </button>
+            )}
+            {onGiveLoot && (
+              <button type="button" className="btn btn--gold" onClick={() => onGiveLoot(actor)}>
+                🎁 Dar loot
+              </button>
+            )}
+          </div>
         )}
       </div>
     </Modal>

@@ -2,7 +2,12 @@ import { useInventoryStore } from '../store/inventoryStore'
 import { InventorySlot } from './InventorySlot'
 import './InventoryGrid.css'
 
-export function InventoryGrid() {
+interface Props {
+  /** Long press em slot vazio (ex.: Mestre forjando um item). Retorna se a ação foi permitida. */
+  onEmptyLongPress?: (slotIndex: number) => boolean
+}
+
+export function InventoryGrid({ onEmptyLongPress }: Props) {
   const slots = useInventoryStore((s) => s.slots)
   const capacity = useInventoryStore((s) => s.capacity)
   const used = slots.filter((s) => s.item !== null).length
@@ -20,7 +25,7 @@ export function InventoryGrid() {
       <div className="inventory__scroll">
         <div className="inventory__grid">
           {slots.map((slot) => (
-            <InventorySlot key={slot.index} slot={slot} />
+            <InventorySlot key={slot.index} slot={slot} onEmptyLongPress={onEmptyLongPress} />
           ))}
         </div>
       </div>

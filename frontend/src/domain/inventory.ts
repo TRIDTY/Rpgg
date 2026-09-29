@@ -59,6 +59,15 @@ export function addItem(slots: InventorySlot[], item: Item): InventoryChange | n
   return { slots: next, changed }
 }
 
+/** Coloca um item em um slot específico, apenas se ele estiver vazio. */
+export function placeItem(slots: InventorySlot[], slotIndex: number, item: Item): InventoryChange | null {
+  const next = clone(slots)
+  const slot = next[slotIndex]
+  if (!slot || slot.item !== null) return null
+  slot.item = item
+  return { slots: next, changed: [slot] }
+}
+
 /** Remove a primeira pilha de um item. Retorna o item removido (com sua quantidade). */
 export function takeItem(slots: InventorySlot[], itemId: ItemId): (InventoryChange & { item: Item }) | null {
   const next = clone(slots)

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { Actor, ActorId, ItemId } from '../types'
+import type { Actor, ActorId, ItemId, NewItemInput, PlayerId } from '../types'
 import { DragDropProvider } from '../dnd/DragDropProvider'
 import { DragOverlay } from '../dnd/DragOverlay'
 import type { DragPayload, DropTarget } from '../dnd/DragDropController'
@@ -7,11 +7,13 @@ import { LOOT_TABLE } from '../data/mockData'
 import { selectActorById, selectItemById, useInventoryStore } from '../store/inventoryStore'
 import { useRoomStore } from '../store/roomStore'
 import { useAppStore } from '../store/appStore'
-import { InitiateTrade, MoveItem } from '../services/tradeService'
+import { CreateItem, InitiateTrade, MoveItem } from '../services/tradeService'
 import { InventoryGrid } from '../components/InventoryGrid'
 import { SessionSidebar } from '../components/SessionSidebar'
 import { TradeModal } from '../components/TradeModal'
 import { PlayerInspectPanel } from '../components/PlayerInspectPanel'
+import { ItemCreationModal } from '../components/ItemCreationModal'
+import { PeerInventoryModal } from '../components/PeerInventoryModal'
 import '../App.css'
 import './screens.css'
 
@@ -20,18 +22,43 @@ interface PendingTrade {
   targetPlayerId: ActorId
 }
 
+interface ForgeTarget {
+  ownerId: PlayerId
+  ownerName: string
+  slotIndex: number
+}
+
 export function SessionScreen() {
   const moveItem = useInventoryStore((s) => s.moveItem)
   const roomName = useInventoryStore((s) => s.roomName)
   const self = useInventoryStore((s) => s.self)
   const notices = useInventoryStore((s) => s.notices)
   const mode = useRoomStore((s) => s.mode)
+  const session = useRoomStore((s) => s.session)
   const giveItem = useRoomStore((s) => s.giveItem)
   const leave = useRoomStore((s) => s.leave)
   const navigate = useAppStore((s) => s.navigate)
 
   const [pendingTrade, setPendingTrade] = useState<PendingTrade | null>(null)
   const [inspectingId, setInspectingId] = useState<ActorId | null>(null)
+  const [peerInventoryId, setPeerInventoryId] = useState<PlayerId | null>(null)
+  const [forgeTarget, setForgeTarget] = useState<ForgeTarget | null>(null)
+
+  const isGameMaster = self?.role === 'master'
+
+  const handleEmptySlotLongPress = useCallback(
+    (slotIndex: number) => {
+      if (!isGameMaster || !self) return false
+      setForgeTarget({ ownerId: self.id, ownerName: self.name, slotIndex })
+      return true
+    },
+    [isGameMaster, self],
+  )
+
+  const forgeItem = (input: NewItemInput) => {
+    if (forgeTarget) CreateItem(forgeTarget.ownerId, forgeTarget.slotIndex, input)
+    setForgeTarget(null)
+  }
 
   const handleDrop = useCallback(
     (payload: DragPayload, target: DropTarget) => {
@@ -50,6 +77,8 @@ export function SessionScreen() {
     pendingTrade ? selectActorById(pendingTrade.targetPlayerId) : () => undefined,
   )
   const inspecting = useInventoryStore(inspectingId ? selectActorById(inspectingId) : () => undefined)
+  const peerActor = useInventoryStore(peerInventoryId ? selectActorById(peerInventoryId) : () => undefined)
+  const peerSlots = peerInventoryId ? session?.members[peerInventoryId]?.profile.Inventory : undefined
 
   const confirmTrade = () => {
     if (pendingTrade) InitiateTrade(pendingTrade.itemId, pendingTrade.targetPlayerId)
@@ -89,7 +118,7 @@ export function SessionScreen() {
           )}
         </div>
         <div className="app__inventory">
-          <InventoryGrid />
+          <InventoryGrid onEmptyLongPress={handleEmptySlotLongPress} />
         </div>
         <div className="app__sidebar">
           <SessionSidebar onTapActor={(a) => setInspectingId(a.id)} />
@@ -122,6 +151,34 @@ export function SessionScreen() {
           actor={inspecting}
           onClose={() => setInspectingId(null)}
           onGiveLoot={isHost ? giveLoot : undefined}
+          onOpenInventory={
+            isHost
+              ? (actor) => {
+                  setInspectingId(null)
+                  setPeerInventoryId(actor.id)
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {isHost && peerActor && peerSlots && !forgeTarget && (
+        <PeerInventoryModal
+          actor={peerActor}
+          slots={peerSlots}
+          onClose={() => setPeerInventoryId(null)}
+          onEmptyLongPress={(slotIndex) =>
+            setForgeTarget({ ownerId: peerActor.id, ownerName: peerActor.name, slotIndex })
+          }
+        />
+      )}
+
+      {forgeTarget && (
+        <ItemCreationModal
+          ownerName={forgeTarget.ownerName}
+          slotIndex={forgeTarget.slotIndex}
+          onForge={forgeItem}
+          onClose={() => setForgeTarget(null)}
         />
       )}
     </DragDropProvider>

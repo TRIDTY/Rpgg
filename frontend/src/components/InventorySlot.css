@@ -23,6 +23,38 @@
   user-select: none;
 }
 
+.inventory-slot--empty {
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.inventory-slot--pressing {
+  transform: scale(0.94);
+  border-color: rgba(255, 200, 80, 0.45);
+  border-style: dashed;
+}
+
+.inventory-slot--denied {
+  animation: slot-denied 500ms ease-out;
+}
+
+@keyframes slot-denied {
+  0%,
+  100% {
+    background: rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  25%,
+  75% {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+
 .inventory-slot--available {
   border-color: rgba(90, 184, 255, 0.25);
   border-style: dashed;

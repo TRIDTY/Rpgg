@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import './Modal.css'
 
 interface Props {
@@ -9,6 +9,8 @@ interface Props {
 }
 
 export function Modal({ title, onClose, children, variant = 'center' }: Props) {
+  const pressedBackdrop = useRef(false)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -17,8 +19,18 @@ export function Modal({ title, onClose, children, variant = 'center' }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Fecha só quando o gesto começou E terminou no backdrop; evita fechar por um
+  // clique "herdado" de um long press que abriu este modal.
+  const onBackdropPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    pressedBackdrop.current = e.target === e.currentTarget
+  }
+  const onBackdropClick = () => {
+    if (pressedBackdrop.current) onClose()
+    pressedBackdrop.current = false
+  }
+
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onPointerDown={onBackdropPointerDown} onClick={onBackdropClick}>
       <div
         className={`modal modal--${variant}`}
         role="dialog"

@@ -10,7 +10,8 @@ import type {
   ServerEvent,
 } from '../types'
 import { newId, profileToActor } from '../domain/character'
-import { addItem, moveItem, takeItem } from '../domain/inventory'
+import { addItem, moveItem, placeItem, takeItem } from '../domain/inventory'
+import { forgeItem, isValidItemInput } from '../domain/itemForge'
 import type { ClientId, ServerAddress, ServerTransport } from './transport'
 
 export interface HostSessionOptions {
@@ -193,6 +194,27 @@ export class HostSession {
         })
         this.sendTo(command.targetPlayerId, { type: 'ItemReceivedEvent', fromId: playerId, item: taken.item })
         console.log(`[host] ${member.profile.Name} -> ${target.profile.Name}: ${taken.item.name} x${taken.item.quantity}`)
+        break
+      }
+      case 'CreateItem': {
+        if (playerId !== this.hostId) {
+          console.warn(`[host] ${member.profile.Name} tentou criar item sem ser o Mestre`)
+          return
+        }
+        const owner = this.session.members[command.ownerId]
+        if (!owner || !isValidItemInput(command.item)) return
+        const item = forgeItem(command.item)
+        const change = placeItem(owner.profile.Inventory, command.slotIndex, item)
+        if (!change) {
+          console.warn(`[host] slot ${command.slotIndex} de ${owner.profile.Name} não está vazio`)
+          return
+        }
+        owner.profile.Inventory = change.slots
+        this.sendTo(command.ownerId, { type: 'InventoryUpdatedEvent', ownerId: command.ownerId, slots: change.changed })
+        if (command.ownerId !== this.hostId) {
+          this.sendTo(command.ownerId, { type: 'ItemReceivedEvent', fromId: this.hostId, item })
+        }
+        console.log(`[host] forjou ${item.icon} ${item.name} (${item.id}) no slot ${command.slotIndex} de ${owner.profile.Name}`)
         break
       }
       case 'JoinRoom':

@@ -1,5 +1,6 @@
 import type { Item } from '../types'
 import { useDraggable } from '../dnd/hooks'
+import { ItemTile } from './ItemTile'
 import './DraggableItem.css'
 
 interface Props {
@@ -22,7 +23,8 @@ export function DraggableItem({ item, slotIndex }: Props) {
 
   const className = [
     'draggable-item',
-    `draggable-item--${item.rarity}`,
+    'item-tile',
+    `item-tile--${item.rarity}`,
     isPressing && 'draggable-item--pressing',
     isDragging && 'draggable-item--dragging',
   ]
@@ -32,13 +34,12 @@ export function DraggableItem({ item, slotIndex }: Props) {
   return (
     <div
       className={className}
-      title={item.name}
+      title={item.description ? `${item.name} — ${item.description}` : item.name}
       role="button"
       aria-label={`${item.name}${item.quantity > 1 ? ` x${item.quantity}` : ''}`}
       {...handlers}
     >
-      <span className="draggable-item__icon">{item.icon}</span>
-      {item.quantity > 1 && <span className="draggable-item__qty">{item.quantity}</span>}
+      <ItemTile item={item} />
       <span className="draggable-item__press-ring" />
     </div>
   )

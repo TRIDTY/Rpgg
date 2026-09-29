@@ -157,4 +157,21 @@ export interface InitiateTradeCommand {
   targetPlayerId: ActorId
 }
 
-export type ClientCommand = JoinRoomCommand | MoveItemCommand | InitiateTradeCommand
+/** Mestre forja um item "on-the-fly" em um slot vazio (próprio ou de um jogador). */
+export interface CreateItemCommand {
+  type: 'CreateItem'
+  ownerId: PlayerId
+  slotIndex: number
+  item: NewItemInput
+}
+
+export interface NewItemInput {
+  name: string
+  icon: string
+  description?: string
+  rarity: ItemRarity
+  quantity: number
+  maxStack: number
+}
+
+export type ClientCommand = JoinRoomCommand | MoveItemCommand | InitiateTradeCommand | CreateItemCommand
