@@ -6,11 +6,14 @@ import './DraggableItem.css'
 interface Props {
   item: Item
   slotIndex: number
+  /** Toque curto no item (leitura). Segurar continua iniciando o arrasto. */
+  onTap?: (item: Item, slotIndex: number) => void
 }
 
-export function DraggableItem({ item, slotIndex }: Props) {
+export function DraggableItem({ item, slotIndex, onTap }: Props) {
   const { handlers, isPressing, isDragging } = useDraggable({
     id: `slot-${slotIndex}`,
+    onTap: onTap ? () => onTap(item, slotIndex) : undefined,
     payload: {
       kind: 'item',
       itemId: item.id,

@@ -7,10 +7,9 @@ import './screens.css'
 
 export function JoinRoomScreen() {
   const navigate = useAppStore((s) => s.navigate)
-  const active = useAppStore((s) => s.activeCharacter)
   const lastRoomAddress = useAppStore((s) => s.lastRoomAddress)
   const rememberRoomAddress = useAppStore((s) => s.rememberRoomAddress)
-  const joinRoom = useRoomStore((s) => s.joinRoom)
+  const connectToRoom = useRoomStore((s) => s.connectToRoom)
   const mode = useRoomStore((s) => s.mode)
   const error = useRoomStore((s) => s.error)
   const clearError = useRoomStore((s) => s.clearError)
@@ -20,7 +19,8 @@ export function JoinRoomScreen() {
   const [invalid, setInvalid] = useState(false)
 
   useEffect(() => {
-    if (mode === 'joined') navigate('session')
+    if (mode === 'lobby') navigate('select-profile')
+    else if (mode === 'joined') navigate('session')
   }, [mode, navigate])
 
   useEffect(() => () => clearError(), [clearError])
@@ -38,14 +38,13 @@ export function JoinRoomScreen() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!active) return
     const parsed = parseInvite(address)
     if (!parsed?.address) {
       setInvalid(true)
       return
     }
     await rememberRoomAddress(address.trim())
-    await joinRoom(active, parsed.address, password.trim().toUpperCase())
+    await connectToRoom(parsed.address, password.trim().toUpperCase())
   }
 
   return (
@@ -55,24 +54,10 @@ export function JoinRoomScreen() {
           ‹
         </button>
         <div>
-          <h1 className="screen__title">Entrar em uma Sala</h1>
-          <p className="screen__subtitle">Sua ficha local é enviada ao Mestre no handshake.</p>
+          <h1 className="screen__title">Conectar a uma Sala</h1>
+          <p className="screen__subtitle">Primeiro a rede; depois você escolhe a ficha que será enviada ao Host.</p>
         </div>
       </header>
-
-      {active && (
-        <div className="character-chip is-active" style={{ cursor: 'default' }}>
-          <span className="character-chip__avatar">{active.Avatar}</span>
-          <span>
-            <span className="character-chip__name">{active.Name}</span>
-            <br />
-            <span className="character-chip__meta">
-              {active.Title || 'Aventureiro'} · Nível {active.Level}
-            </span>
-          </span>
-          <span className="character-chip__badge">ficha</span>
-        </div>
-      )}
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -104,7 +89,7 @@ export function JoinRoomScreen() {
           />
         </label>
 
-        <button type="submit" className="btn btn--primary btn--block" disabled={!active || mode === 'connecting'}>
+        <button type="submit" className="btn btn--primary btn--block" disabled={mode === 'connecting'}>
           {mode === 'connecting' ? 'Conectando…' : '🔑 Conectar'}
         </button>
       </form>

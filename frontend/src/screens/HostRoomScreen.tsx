@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import QRCode from 'qrcode'
-import type { CharacterProfile } from '../types'
-import { AVATAR_OPTIONS, createCharacter, DEFAULT_ATTRIBUTES } from '../domain/character'
 import { encodeInvite, generateRoomPassword } from '../room/invite'
 import { DEFAULT_ROOM_PORT, formatAddress, LOOPBACK_HOST } from '../room/transport'
 import { useAppStore } from '../store/appStore'
@@ -15,38 +13,17 @@ export function HostRoomScreen() {
 
 function HostSetup() {
   const navigate = useAppStore((s) => s.navigate)
-  const characters = useAppStore((s) => s.characters)
-  const active = useAppStore((s) => s.activeCharacter)
-  const saveCharacter = useAppStore((s) => s.saveCharacter)
   const startHosting = useRoomStore((s) => s.startHosting)
   const mode = useRoomStore((s) => s.mode)
   const error = useRoomStore((s) => s.error)
 
-  const gmProfile = characters.find((c) => c.Role === 'GM') ?? (active?.Role === 'GM' ? active : null)
-
   const [roomName, setRoomName] = useState('Mesa da Guilda')
   const [password, setPassword] = useState(() => generateRoomPassword())
   const [port, setPort] = useState(String(DEFAULT_ROOM_PORT))
-  const [gmName, setGmName] = useState(gmProfile?.Name ?? 'Mestre')
-  const [gmAvatar, setGmAvatar] = useState(gmProfile?.Avatar ?? '🧙')
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    let profile: CharacterProfile
-    if (gmProfile && gmProfile.Name === gmName.trim() && gmProfile.Avatar === gmAvatar) {
-      profile = gmProfile
-    } else {
-      profile = createCharacter({
-        name: gmName || 'Mestre',
-        role: 'GM',
-        avatar: gmAvatar,
-        title: 'Narrador',
-        attributes: DEFAULT_ATTRIBUTES,
-        starterKit: true,
-      })
-      await saveCharacter(profile)
-    }
-    await startHosting(profile, {
+    await startHosting({
       roomName: roomName.trim() || 'Sala',
       password: password.trim().toUpperCase(),
       port: Number(port) || DEFAULT_ROOM_PORT,
@@ -60,8 +37,10 @@ function HostSetup() {
           ‹
         </button>
         <div>
-          <h1 className="screen__title">Criar uma Sala</h1>
-          <p className="screen__subtitle">Seu aparelho vira o servidor local e você assume como Mestre.</p>
+          <h1 className="screen__title">Criar Nova Sala</h1>
+          <p className="screen__subtitle">
+            Só a rede: seu aparelho vira o servidor local. A ficha (Jogador ou Mestre) você escolhe em seguida.
+          </p>
         </div>
       </header>
 
@@ -99,27 +78,6 @@ function HostSetup() {
           />
         </label>
 
-        <label className="field">
-          <span className="field__label">Seu nome como Mestre</span>
-          <input className="input" value={gmName} onChange={(e) => setGmName(e.target.value)} maxLength={32} />
-        </label>
-
-        <div className="field">
-          <span className="field__label">Avatar do Mestre</span>
-          <div className="avatar-picker">
-            {['🧙', ...AVATAR_OPTIONS.filter((a) => a !== '🧙')].map((a) => (
-              <button
-                type="button"
-                key={a}
-                className={`avatar-picker__option ${gmAvatar === a ? 'is-selected' : ''}`}
-                onClick={() => setGmAvatar(a)}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <button type="submit" className="btn btn--gold btn--block" disabled={mode === 'starting'}>
           {mode === 'starting' ? 'Iniciando servidor…' : '🏰 Abrir a sala'}
         </button>
@@ -133,6 +91,7 @@ function HostLobby() {
   const room = useRoomStore((s) => s.room)
   const serverKind = useRoomStore((s) => s.serverKind)
   const session = useRoomStore((s) => s.session)
+  const self = useRoomStore((s) => s.self)
   const members = useMemo(() => membersOf(session), [session])
   const leave = useRoomStore((s) => s.leave)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -154,7 +113,10 @@ function HostLobby() {
       <header className="screen__header">
         <div>
           <h1 className="screen__title">🏰 {room.name}</h1>
-          <p className="screen__subtitle">Sala aberta. Compartilhe os dados abaixo com quem está no mesmo Wi-Fi.</p>
+          <p className="screen__subtitle">
+            Sala aberta{self ? ` · você é ${self.Name}` : ' · servidor rodando, nenhuma ficha ainda'}. Compartilhe os dados
+            abaixo com quem está no mesmo Wi-Fi.
+          </p>
         </div>
       </header>
 
@@ -204,12 +166,15 @@ function HostLobby() {
               <span>
                 <span className="member__name">{m.name}</span>
                 <br />
-                <span className="member__meta">{m.role === 'master' ? 'Mestre (você)' : m.title || 'Jogador'}</span>
+                <span className="member__meta">
+                  {m.role === 'master' ? 'Mestre' : m.title || 'Jogador'}
+                  {m.id === self?.PlayerId && ' (você)'}
+                </span>
               </span>
               <span className={`member__status ${m.online ? 'is-online' : ''}`}>{m.online ? 'online' : 'offline'}</span>
             </div>
           ))}
-          {members.length <= 1 && <div className="member-list__empty">Aguardando jogadores entrarem…</div>}
+          {members.length === 0 && <div className="member-list__empty">Aguardando jogadores entrarem…</div>}
         </div>
       </section>
 
@@ -217,9 +182,15 @@ function HostLobby() {
         <button type="button" className="btn btn--danger" onClick={() => void leave().then(() => navigate('home'))}>
           Encerrar sala
         </button>
-        <button type="button" className="btn btn--primary" onClick={() => navigate('session')}>
-          🎒 Abrir inventário
-        </button>
+        {self ? (
+          <button type="button" className="btn btn--primary" onClick={() => navigate('session')}>
+            🎒 Abrir inventário
+          </button>
+        ) : (
+          <button type="button" className="btn btn--primary" onClick={() => navigate('select-profile')}>
+            🧞 Escolher perfil
+          </button>
+        )}
       </div>
     </div>
   )

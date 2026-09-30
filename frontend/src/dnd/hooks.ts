@@ -33,21 +33,25 @@ interface UseDraggableOptions {
   id: string
   payload: DragPayload | null
   disabled?: boolean
+  /** Toque curto (soltou antes do long press, sem mover): não inicia arrasto. */
+  onTap?: () => void
 }
 
-export function useDraggable({ id, payload, disabled }: UseDraggableOptions) {
+export function useDraggable({ id, payload, disabled, onTap }: UseDraggableOptions) {
   const controller = useDragDropController()
   const [phase, setPhase] = useState<PressPhase>('idle')
   const payloadRef = useRef(payload)
+  const tapRef = useRef(onTap)
 
   useEffect(() => {
     payloadRef.current = payload
-  }, [payload])
+    tapRef.current = onTap
+  }, [payload, onTap])
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       if (disabled || !payloadRef.current) return
-      controller.beginPress(event.nativeEvent, payloadRef.current, id, setPhase)
+      controller.beginPress(event.nativeEvent, payloadRef.current, id, setPhase, () => tapRef.current?.())
     },
     [controller, disabled, id],
   )

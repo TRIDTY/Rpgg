@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useState } from 'react'
-import type { InventorySlot as InventorySlotModel } from '../types'
+import type { InventorySlot as InventorySlotModel, Item } from '../types'
 import { useDropTarget } from '../dnd/hooks'
 import { useLongPress } from '../dnd/useLongPress'
 import { DraggableItem } from './DraggableItem'
@@ -12,9 +12,11 @@ interface Props {
    * faz o slot piscar (feedback neutro para quem não tem permissão).
    */
   onEmptyLongPress?: (slotIndex: number) => boolean
+  /** Toque curto em slot ocupado (inspecionar o item). */
+  onItemTap?: (item: Item, slotIndex: number) => void
 }
 
-export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPress }: Props) {
+export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPress, onItemTap }: Props) {
   const { isOver, isDragActive, attributes } = useDropTarget({
     id: `slot-${slot.index}`,
     kind: 'slot',
@@ -52,7 +54,7 @@ export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPres
   return (
     <div className={className} {...attributes} {...handlers} data-slot-index={slot.index}>
       {slot.item ? (
-        <DraggableItem item={slot.item} slotIndex={slot.index} />
+        <DraggableItem item={slot.item} slotIndex={slot.index} onTap={onItemTap} />
       ) : (
         <span className="inventory-slot__index">{slot.index + 1}</span>
       )}

@@ -5,28 +5,35 @@ import type {
   GameSession,
   InventorySlot,
   Item,
+  JoinAcceptedEvent,
   JoinRoomCommand,
   PlayerId,
   ServerEvent,
+  SessionMember,
 } from '../types'
 import { newId, profileToActor } from '../domain/character'
-import { addItem, moveItem, placeItem, takeItem } from '../domain/inventory'
+import { addItem, moveItem, placeItem, removeItem, takeItem } from '../domain/inventory'
 import { forgeItem, isValidItemInput } from '../domain/itemForge'
 import type { ClientId, ServerAddress, ServerTransport } from './transport'
 
 export interface HostSessionOptions {
   roomName: string
   password: string
-  /** Eventos endereçados ao próprio Host (o Mestre também é um membro). */
+  /** Eventos endereçados ao perfil com que o aparelho Host entrou na sala. */
   onLocalEvent: (event: ServerEvent) => void
   /** Chamado a cada mudança de estado da sessão (para persistir/exibir). */
   onSessionChange: (session: GameSession) => void
 }
 
+const isGameMaster = (member: SessionMember) => member.profile.Role === 'GM'
+
 /**
  * Fonte da verdade da sessão. Roda no aparelho que criou a sala: valida o
  * handshake (senha), mantém os inventários de todos os membros e propaga
  * eventos para os clientes através de um ServerTransport.
+ *
+ * A sala nasce sem jogador: o aparelho Host entra depois com um perfil
+ * (`joinLocal`), que pode ser Jogador ou Mestre como qualquer outro membro.
  */
 export class HostSession {
   readonly session: GameSession
@@ -36,23 +43,21 @@ export class HostSession {
   private readonly transport: ServerTransport
   private readonly options: HostSessionOptions
 
-  constructor(hostProfile: CharacterProfile, transport: ServerTransport, options: HostSessionOptions) {
+  constructor(transport: ServerTransport, options: HostSessionOptions) {
     this.transport = transport
     this.options = options
-    const now = new Date().toISOString()
     this.session = {
       roomId: newId(),
       name: options.roomName,
       password: options.password,
-      hostId: hostProfile.PlayerId,
-      createdAt: now,
-      members: {
-        [hostProfile.PlayerId]: { profile: { ...hostProfile, Role: 'GM' }, online: true, joinedAt: now },
-      },
+      hostId: null,
+      createdAt: new Date().toISOString(),
+      members: {},
     }
   }
 
-  get hostId() {
+  /** Perfil local do aparelho Host (null enquanto só a rede está aberta). */
+  get localPlayerId() {
     return this.session.hostId
   }
 
@@ -78,22 +83,26 @@ export class HostSession {
     return this.session.members[playerId]?.profile.Inventory
   }
 
-  /** Comandos vindos da UI do próprio Host. */
-  handleLocalCommand(command: ClientCommand) {
-    this.handleCommand(this.hostId, command)
+  /** O aparelho Host entra na própria sala com um perfil, sem passar pela rede. */
+  joinLocal(profile: CharacterProfile): JoinAcceptedEvent {
+    const member = this.admit(profile)
+    this.session.hostId = profile.PlayerId
+    const accepted = this.acceptedEvent(member)
+    console.log(`[host] ${profile.Name} (${profile.Role}) entrou na própria sala`)
+    this.broadcastSession()
+    this.notifyGameMasters(profile.PlayerId, member.profile.Inventory)
+    this.changed()
+    return accepted
   }
 
-  /** Ferramenta do Mestre: entrega um item a um membro. */
-  giveItem(targetId: PlayerId, item: Item): boolean {
-    const target = this.session.members[targetId]
-    if (!target) return false
-    const change = addItem(target.profile.Inventory, item)
-    if (!change) return false
-    target.profile.Inventory = change.slots
-    this.sendTo(targetId, { type: 'InventoryUpdatedEvent', ownerId: targetId, slots: change.changed })
-    this.sendTo(targetId, { type: 'ItemReceivedEvent', fromId: this.hostId, item })
-    this.changed()
-    return true
+  /** Comandos vindos da UI do próprio Host. */
+  handleLocalCommand(command: ClientCommand) {
+    const playerId = this.session.hostId
+    if (!playerId) {
+      console.warn('[host] nenhum perfil local na sala; comando descartado', command)
+      return
+    }
+    this.handleCommand(playerId, command)
   }
 
   private onMessage(clientId: ClientId, data: string) {
@@ -126,40 +135,58 @@ export class HostSession {
     if (!character?.PlayerId || !character.Name || !Array.isArray(character.Inventory)) {
       return reject('Ficha de personagem inválida')
     }
+    if (character.PlayerId === this.session.hostId) return reject('Esse perfil já está em uso pelo Host')
 
-    const existing = this.session.members[character.PlayerId]
     const previousClient = this.clientOf.get(character.PlayerId)
     if (previousClient && previousClient !== clientId) {
       this.playerOf.delete(previousClient)
       this.transport.disconnect(previousClient)
     }
 
-    // Reconexão mantém o inventário que o Host conhece (fonte da verdade);
-    // primeira entrada usa a ficha enviada pelo cliente.
-    const profile: CharacterProfile = existing
-      ? { ...character, Role: 'Player', Inventory: existing.profile.Inventory }
-      : { ...character, Role: 'Player' }
-    this.session.members[character.PlayerId] = {
-      profile,
-      online: true,
-      joinedAt: existing?.joinedAt ?? new Date().toISOString(),
-    }
+    const member = this.admit(character)
     this.clientOf.set(character.PlayerId, clientId)
     this.playerOf.set(clientId, character.PlayerId)
 
-    this.transport.send(
-      clientId,
-      JSON.stringify({
-        type: 'JoinAccepted',
-        playerId: character.PlayerId,
-        roomName: this.session.name,
-        actors: this.actors(),
-        inventory: profile.Inventory,
-      } satisfies ServerEvent),
-    )
-    console.log(`[host] ${character.Name} entrou na sala (${character.PlayerId})`)
+    this.transport.send(clientId, JSON.stringify(this.acceptedEvent(member)))
+    console.log(`[host] ${character.Name} (${character.Role}) entrou na sala (${character.PlayerId})`)
     this.broadcastSession()
+    this.notifyGameMasters(character.PlayerId, member.profile.Inventory)
     this.changed()
+  }
+
+  /**
+   * Registra (ou reativa) um membro preservando a Role escolhida na ficha.
+   * Reconexão mantém o inventário que o Host conhece (fonte da verdade);
+   * primeira entrada usa a ficha enviada.
+   */
+  private admit(character: CharacterProfile): SessionMember {
+    const existing = this.session.members[character.PlayerId]
+    const member: SessionMember = {
+      profile: existing ? { ...character, Inventory: existing.profile.Inventory } : { ...character },
+      online: true,
+      joinedAt: existing?.joinedAt ?? new Date().toISOString(),
+    }
+    this.session.members[character.PlayerId] = member
+    return member
+  }
+
+  private acceptedEvent(member: SessionMember): JoinAcceptedEvent {
+    const playerId = member.profile.PlayerId
+    const event: JoinAcceptedEvent = {
+      type: 'JoinAccepted',
+      playerId,
+      roomName: this.session.name,
+      actors: this.actors(),
+      inventory: member.profile.Inventory,
+    }
+    if (isGameMaster(member)) {
+      event.inventories = Object.fromEntries(
+        Object.values(this.session.members)
+          .filter((m) => m.profile.PlayerId !== playerId)
+          .map((m) => [m.profile.PlayerId, m.profile.Inventory]),
+      )
+    }
+    return event
   }
 
   private handleCommand(playerId: PlayerId, command: ClientCommand) {
@@ -171,7 +198,18 @@ export class HostSession {
         const change = moveItem(member.profile.Inventory, command.fromSlot, command.toSlot)
         if (!change) return
         member.profile.Inventory = change.slots
-        this.sendTo(playerId, { type: 'InventoryUpdatedEvent', ownerId: playerId, slots: change.changed })
+        this.inventoryUpdated(playerId, change.changed)
+        break
+      }
+      case 'DiscardItem': {
+        const change = removeItem(member.profile.Inventory, command.slotIndex, command.itemId)
+        if (!change) {
+          console.warn(`[host] descarte inválido de ${member.profile.Name} no slot ${command.slotIndex}`)
+          return
+        }
+        member.profile.Inventory = change.slots
+        this.inventoryUpdated(playerId, change.changed)
+        console.log(`[host] ${member.profile.Name} descartou ${change.item.icon} ${change.item.name} x${change.item.quantity}`)
         break
       }
       case 'InitiateTrade': {
@@ -186,19 +224,15 @@ export class HostSession {
         }
         member.profile.Inventory = taken.slots
         target.profile.Inventory = added.slots
-        this.sendTo(playerId, { type: 'InventoryUpdatedEvent', ownerId: playerId, slots: taken.changed })
-        this.sendTo(command.targetPlayerId, {
-          type: 'InventoryUpdatedEvent',
-          ownerId: command.targetPlayerId,
-          slots: added.changed,
-        })
+        this.inventoryUpdated(playerId, taken.changed)
+        this.inventoryUpdated(command.targetPlayerId, added.changed)
         this.sendTo(command.targetPlayerId, { type: 'ItemReceivedEvent', fromId: playerId, item: taken.item })
         console.log(`[host] ${member.profile.Name} -> ${target.profile.Name}: ${taken.item.name} x${taken.item.quantity}`)
         break
       }
       case 'CreateItem': {
-        if (playerId !== this.hostId) {
-          console.warn(`[host] ${member.profile.Name} tentou criar item sem ser o Mestre`)
+        if (!isGameMaster(member)) {
+          console.warn(`[host] ${member.profile.Name} tentou criar item sem ser Mestre`)
           return
         }
         const owner = this.session.members[command.ownerId]
@@ -210,17 +244,36 @@ export class HostSession {
           return
         }
         owner.profile.Inventory = change.slots
-        this.sendTo(command.ownerId, { type: 'InventoryUpdatedEvent', ownerId: command.ownerId, slots: change.changed })
-        if (command.ownerId !== this.hostId) {
-          this.sendTo(command.ownerId, { type: 'ItemReceivedEvent', fromId: this.hostId, item })
+        this.inventoryUpdated(command.ownerId, change.changed)
+        if (command.ownerId !== playerId) {
+          this.sendTo(command.ownerId, { type: 'ItemReceivedEvent', fromId: playerId, item })
         }
         console.log(`[host] forjou ${item.icon} ${item.name} (${item.id}) no slot ${command.slotIndex} de ${owner.profile.Name}`)
+        break
+      }
+      case 'GiveItem': {
+        if (!isGameMaster(member)) {
+          console.warn(`[host] ${member.profile.Name} tentou dar item sem ser Mestre`)
+          return
+        }
+        if (!this.giveItem(playerId, command.targetId, command.item)) return
         break
       }
       case 'JoinRoom':
         break
     }
     this.changed()
+  }
+
+  private giveItem(fromId: PlayerId, targetId: PlayerId, item: Item): boolean {
+    const target = this.session.members[targetId]
+    if (!target) return false
+    const change = addItem(target.profile.Inventory, item)
+    if (!change) return false
+    target.profile.Inventory = change.slots
+    this.inventoryUpdated(targetId, change.changed)
+    this.sendTo(targetId, { type: 'ItemReceivedEvent', fromId, item })
+    return true
   }
 
   private onDisconnect(clientId: ClientId) {
@@ -234,8 +287,22 @@ export class HostSession {
     this.changed()
   }
 
+  /** Entrega a mudança ao dono e a todos os Mestres online (que enxergam as mochilas alheias). */
+  private inventoryUpdated(ownerId: PlayerId, slots: InventorySlot[]) {
+    this.sendTo(ownerId, { type: 'InventoryUpdatedEvent', ownerId, slots })
+    this.notifyGameMasters(ownerId, slots)
+  }
+
+  private notifyGameMasters(ownerId: PlayerId, slots: InventorySlot[]) {
+    for (const m of Object.values(this.session.members)) {
+      if (m.online && isGameMaster(m) && m.profile.PlayerId !== ownerId) {
+        this.sendTo(m.profile.PlayerId, { type: 'InventoryUpdatedEvent', ownerId, slots })
+      }
+    }
+  }
+
   private sendTo(playerId: PlayerId, event: ServerEvent) {
-    if (playerId === this.hostId) {
+    if (playerId === this.session.hostId) {
       this.options.onLocalEvent(event)
       return
     }
@@ -244,7 +311,7 @@ export class HostSession {
   }
 
   private broadcast(event: ServerEvent) {
-    this.options.onLocalEvent(event)
+    if (this.session.hostId) this.options.onLocalEvent(event)
     this.transport.broadcast(JSON.stringify(event))
   }
 

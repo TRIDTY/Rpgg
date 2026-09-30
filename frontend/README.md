@@ -44,9 +44,29 @@ src/
     TradeModal / PlayerInspectPanel / Modal
 ```
 
+## Fluxo de telas (lobby)
+
+```
+Home ──► Criar Nova Sala (Host) ──► Sala aberta (IP/senha/QR, sem ficha) ──┐
+     └─► Conectar a uma Sala (Join) ──► conexão aceita pelo Host ───────────┤
+                                                                             ▼
+                                                Escolher perfil (fichas JSON locais / Criar Novo Perfil)
+                                                                             ▼
+                                                                          Sessão
+```
+
+A camada de rede (`roomStore.startHosting` / `connectToRoom`) não conhece a ficha; `joinAs(profile)` faz o handshake
+depois. A Role vem da ficha (`Player` ou `GM`): o Host pode jogar como Player e um cliente pode ser o Mestre —
+o `HostSession` autoriza ações de Mestre por `profile.Role`, não por quem hospeda.
+
 ## Gestos
 
-- **Segurar (220ms) + arrastar** um item para outro slot: move (ou troca / empilha se for o mesmo item).
+- **Toque curto** em um item: abre o `ItemDetailsModal` (imagem, nome, descrição, raridade/quantidade).
+- **Segurar (220ms) + arrastar** um item para outro slot: move; se o destino tiver item com o **mesmo Nome e Descrição**
+  as pilhas se fundem (até `maxStack`, o excedente fica na origem); se forem diferentes, os slots trocam de lugar.
+- **Arrastar até a Lixeira** (FAB no canto, acende durante o arrasto): confirma "Deseja mesmo descartar [Nome]?" e envia
+  `DiscardItem(slotIndex, itemId)` ao Host, que valida, remove e devolve `InventoryUpdatedEvent`.
+- **Segurar um slot vazio**: só o Mestre (`Role === 'GM'`) abre a forja de itens; Player vê o slot piscar.
 - **Arrastar até uma bolinha**: a bolinha brilha e cresce; ao soltar abre o modal "Deseja enviar [Item] para [Jogador]?".
   Confirmar dispara `InitiateTrade(itemId, targetPlayerId)` (console + comando pelo canal realtime).
 - **Tap na bolinha**: abre painel com informações públicas e itens equipados.

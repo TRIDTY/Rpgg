@@ -75,7 +75,8 @@ export interface GameSession {
   roomId: string
   name: string
   password: string
-  hostId: PlayerId
+  /** Perfil com que o aparelho Host entrou na própria sala (null enquanto só a rede está aberta). */
+  hostId: PlayerId | null
   createdAt: string
   members: Record<PlayerId, SessionMember>
 }
@@ -114,6 +115,8 @@ export interface JoinAcceptedEvent {
   roomName: string
   actors: Actor[]
   inventory: InventorySlot[]
+  /** Só para Mestres: mochilas dos demais membros, para inspecionar/forjar. */
+  inventories?: Record<PlayerId, InventorySlot[]>
 }
 
 export interface JoinRejectedEvent {
@@ -174,4 +177,24 @@ export interface NewItemInput {
   maxStack: number
 }
 
-export type ClientCommand = JoinRoomCommand | MoveItemCommand | InitiateTradeCommand | CreateItemCommand
+/** Jogador solta um item na lixeira: o Host destrói a pilha inteira daquele slot. */
+export interface DiscardItemCommand {
+  type: 'DiscardItem'
+  slotIndex: number
+  itemId: ItemId
+}
+
+/** Mestre entrega um item pronto (ex.: loot do catálogo) a um membro. */
+export interface GiveItemCommand {
+  type: 'GiveItem'
+  targetId: PlayerId
+  item: Item
+}
+
+export type ClientCommand =
+  | JoinRoomCommand
+  | MoveItemCommand
+  | InitiateTradeCommand
+  | CreateItemCommand
+  | DiscardItemCommand
+  | GiveItemCommand

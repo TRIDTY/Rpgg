@@ -16,6 +16,12 @@ export function MoveItem(fromSlot: number, toSlot: number) {
   useRoomStore.getState().sendCommand({ type: 'MoveItem', fromSlot, toSlot })
 }
 
+/** Item solto na lixeira: o Host destrói a pilha daquele slot e confirma com InventoryUpdatedEvent. */
+export function DiscardItem(slotIndex: number, itemId: ItemId) {
+  console.log(`DiscardItem(${slotIndex}, ${itemId})`)
+  useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex, itemId })
+}
+
 /**
  * Mestre forja um item no slot vazio indicado. O Host gera o UUID, insere no
  * inventário do dono (próprio ou de um jogador) e emite InventoryUpdatedEvent

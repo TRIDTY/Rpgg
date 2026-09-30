@@ -1,4 +1,4 @@
-import type { Actor, InventorySlot } from '../types'
+import type { Actor, InventorySlot, Item } from '../types'
 import { useLongPress } from '../dnd/useLongPress'
 import { Modal } from './Modal'
 import { ItemTile } from './ItemTile'
@@ -10,26 +10,41 @@ interface Props {
   onClose: () => void
   /** Mestre: long press em slot vazio para forjar um item direto na mochila do jogador. */
   onEmptyLongPress: (slotIndex: number) => void
+  /** Toque curto em um item para ler nome/descrição. */
+  onItemTap?: (item: Item) => void
 }
 
 /** Visão do Mestre sobre a mochila de um jogador conectado (somente leitura + forja em slots vazios). */
-export function PeerInventoryModal({ actor, slots, onClose, onEmptyLongPress }: Props) {
+export function PeerInventoryModal({ actor, slots, onClose, onEmptyLongPress, onItemTap }: Props) {
   const used = slots.filter((s) => s.item !== null).length
   return (
     <Modal title={`🎒 Mochila de ${actor.name}`} onClose={onClose} variant="sheet">
       <p className="peer-inv__hint">
-        {used}/{slots.length} slots · segure um slot vazio para forjar um item aqui
+        {used}/{slots.length} slots · toque em um item para ler · segure um slot vazio para forjar
       </p>
       <div className="peer-inv__grid">
         {slots.map((slot) => (
-          <PeerSlot key={slot.index} slot={slot} onLongPress={() => onEmptyLongPress(slot.index)} />
+          <PeerSlot
+            key={slot.index}
+            slot={slot}
+            onLongPress={() => onEmptyLongPress(slot.index)}
+            onTap={onItemTap}
+          />
         ))}
       </div>
     </Modal>
   )
 }
 
-function PeerSlot({ slot, onLongPress }: { slot: InventorySlot; onLongPress: () => void }) {
+function PeerSlot({
+  slot,
+  onLongPress,
+  onTap,
+}: {
+  slot: InventorySlot
+  onLongPress: () => void
+  onTap?: (item: Item) => void
+}) {
   const { handlers, isPressing } = useLongPress({ onLongPress, disabled: !!slot.item })
   const className = [
     'inventory-slot',
@@ -41,9 +56,14 @@ function PeerSlot({ slot, onLongPress }: { slot: InventorySlot; onLongPress: () 
   return (
     <div className={className} {...handlers} data-slot-index={slot.index}>
       {slot.item ? (
-        <div className={`item-tile item-tile--${slot.item.rarity}`} title={slot.item.name}>
+        <button
+          type="button"
+          className={`item-tile item-tile--${slot.item.rarity} peer-inv__item`}
+          title={slot.item.name}
+          onClick={() => slot.item && onTap?.(slot.item)}
+        >
           <ItemTile item={slot.item} />
-        </div>
+        </button>
       ) : (
         <span className="inventory-slot__index">{slot.index + 1}</span>
       )}

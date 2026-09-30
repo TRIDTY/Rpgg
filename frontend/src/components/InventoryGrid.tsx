@@ -1,3 +1,4 @@
+import type { Item } from '../types'
 import { useInventoryStore } from '../store/inventoryStore'
 import { InventorySlot } from './InventorySlot'
 import './InventoryGrid.css'
@@ -5,9 +6,11 @@ import './InventoryGrid.css'
 interface Props {
   /** Long press em slot vazio (ex.: Mestre forjando um item). Retorna se a ação foi permitida. */
   onEmptyLongPress?: (slotIndex: number) => boolean
+  /** Toque curto em um item: abre a inspeção (imagem, nome, descrição). */
+  onItemTap?: (item: Item, slotIndex: number) => void
 }
 
-export function InventoryGrid({ onEmptyLongPress }: Props) {
+export function InventoryGrid({ onEmptyLongPress, onItemTap }: Props) {
   const slots = useInventoryStore((s) => s.slots)
   const capacity = useInventoryStore((s) => s.capacity)
   const used = slots.filter((s) => s.item !== null).length
@@ -25,7 +28,7 @@ export function InventoryGrid({ onEmptyLongPress }: Props) {
       <div className="inventory__scroll">
         <div className="inventory__grid">
           {slots.map((slot) => (
-            <InventorySlot key={slot.index} slot={slot} onEmptyLongPress={onEmptyLongPress} />
+            <InventorySlot key={slot.index} slot={slot} onEmptyLongPress={onEmptyLongPress} onItemTap={onItemTap} />
           ))}
         </div>
       </div>

@@ -14,6 +14,7 @@ export type DragPayload = ItemDragPayload
 export type DropTarget =
   | { id: string; kind: 'slot'; slotIndex: number }
   | { id: string; kind: 'actor'; actorId: ActorId }
+  | { id: string; kind: 'trash' }
 
 export interface DragState {
   payload: DragPayload
@@ -40,6 +41,7 @@ interface PendingPress {
   start: Point
   timer: ReturnType<typeof setTimeout>
   onStateChange: (phase: PressPhase) => void
+  onTap?: () => void
 }
 
 export type PressPhase = 'idle' | 'pressing' | 'dragging'
@@ -115,6 +117,7 @@ export class DragDropController {
     payload: DragPayload,
     sourceId: string,
     onStateChange: (phase: PressPhase) => void,
+    onTap?: () => void,
   ) {
     if (this.state || this.pending) return
     if (event.button !== 0) return
@@ -123,7 +126,7 @@ export class DragDropController {
     this.lastPoint = start
 
     const timer = setTimeout(() => this.startDrag(), LONG_PRESS_MS)
-    this.pending = { pointerId: event.pointerId, payload, sourceId, start, timer, onStateChange }
+    this.pending = { pointerId: event.pointerId, payload, sourceId, start, timer, onStateChange, onTap }
     onStateChange('pressing')
 
     window.addEventListener('pointermove', this.handlePointerMove, { passive: false })
@@ -199,7 +202,10 @@ export class DragDropController {
 
   private handlePointerUp = () => {
     if (this.pending) {
+      // Soltou antes do long press e sem se mover: toque curto (leitura).
+      const { onTap } = this.pending
       this.cancelPress()
+      onTap?.()
       return
     }
     if (!this.state) return

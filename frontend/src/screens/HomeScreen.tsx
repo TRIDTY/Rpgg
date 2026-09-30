@@ -4,9 +4,8 @@ import './screens.css'
 
 export function HomeScreen() {
   const characters = useAppStore((s) => s.characters)
-  const active = useAppStore((s) => s.activeCharacter)
   const navigate = useAppStore((s) => s.navigate)
-  const selectCharacter = useAppStore((s) => s.selectCharacter)
+  const createCharacter = useAppStore((s) => s.createCharacter)
   const deleteCharacter = useAppStore((s) => s.deleteCharacter)
   const error = useRoomStore((s) => s.error)
   const clearError = useRoomStore((s) => s.clearError)
@@ -29,45 +28,34 @@ export function HomeScreen() {
         <button type="button" className="action-card action-card--host" onClick={() => navigate('host-room')}>
           <span className="action-card__icon">🏰</span>
           <span>
-            <span className="action-card__title">Criar uma Sala</span>
+            <span className="action-card__title">Criar Nova Sala (Host)</span>
             <span className="action-card__desc">
-              Vira o Mestre: seu aparelho abre o servidor local e guarda o estado da sessão.
+              Seu aparelho abre o servidor local. Depois você escolhe com qual ficha entrar — Jogador ou Mestre.
             </span>
           </span>
         </button>
 
-        <button
-          type="button"
-          className="action-card action-card--player"
-          onClick={() => navigate('create-character')}
-        >
-          <span className="action-card__icon">🧝</span>
+        <button type="button" className="action-card action-card--player" onClick={() => navigate('join-room')}>
+          <span className="action-card__icon">🔑</span>
           <span>
-            <span className="action-card__title">Criar Perfil de Personagem</span>
-            <span className="action-card__desc">Gera a ficha JSON (save game) guardada só neste aparelho.</span>
+            <span className="action-card__title">Conectar a uma Sala (Join)</span>
+            <span className="action-card__desc">Use o IP/código do Host na mesma rede e escolha sua ficha em seguida.</span>
           </span>
         </button>
       </div>
 
-      <button
-        type="button"
-        className="btn btn--ghost home__join"
-        disabled={!active}
-        onClick={() => navigate('join-room')}
-        title={active ? undefined : 'Crie um personagem primeiro'}
-      >
-        🔑 Entrar em uma Sala
+      <button type="button" className="btn btn--ghost home__join" onClick={() => createCharacter('home')}>
+        🧝 Criar Perfil de Personagem
       </button>
 
       {characters.length > 0 && (
         <div className="character-list">
-          <span className="character-list__label">Fichas neste aparelho</span>
+          <span className="character-list__label">Fichas neste aparelho ({characters.length})</span>
           {characters.map((c) => (
-            <button
-              type="button"
+            <div
               key={c.PlayerId}
-              className={`character-chip ${active?.PlayerId === c.PlayerId ? 'is-active' : ''}`}
-              onClick={() => selectCharacter(c.PlayerId)}
+              className="character-chip"
+              style={{ cursor: 'default' }}
               onDoubleClick={() => {
                 if (confirm(`Apagar a ficha de ${c.Name}?`)) void deleteCharacter(c.PlayerId)
               }}
@@ -81,10 +69,12 @@ export function HomeScreen() {
                   {c.Inventory.filter((s) => s.item).length} itens
                 </span>
               </span>
-              {active?.PlayerId === c.PlayerId && <span className="character-chip__badge">ativo</span>}
-            </button>
+              <span className={`role-badge ${c.Role === 'GM' ? 'role-badge--gm' : ''}`}>
+                {c.Role === 'GM' ? '🧙 GM' : '🗡️ Player'}
+              </span>
+            </div>
           ))}
-          <span className="home__footer">Toque para selecionar · toque duplo para apagar</span>
+          <span className="home__footer">A ficha é escolhida ao entrar em uma sala · toque duplo para apagar</span>
         </div>
       )}
     </div>

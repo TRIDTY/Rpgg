@@ -21,6 +21,7 @@ const parseValue = (raw: string): AttributeValue => {
 
 export function CreateCharacterScreen() {
   const navigate = useAppStore((s) => s.navigate)
+  const returnTo = useAppStore((s) => s.returnTo)
   const saveCharacter = useAppStore((s) => s.saveCharacter)
 
   const [name, setName] = useState('')
@@ -44,13 +45,13 @@ export function CreateCharacterScreen() {
     console.log('[save] personagem criado', profile)
     await saveCharacter(profile)
     setSaving(false)
-    navigate('home')
+    navigate(returnTo)
   }
 
   return (
     <div className="screen">
       <header className="screen__header">
-        <button type="button" className="screen__back" onClick={() => navigate('home')} aria-label="Voltar">
+        <button type="button" className="screen__back" onClick={() => navigate(returnTo)} aria-label="Voltar">
           ‹
         </button>
         <div>

@@ -2,10 +2,16 @@ import { create } from 'zustand'
 import type { CharacterProfile, PlayerId } from '../types'
 import { characterRepository, settingsRepository } from '../storage/repositories'
 
-export type Screen = 'home' | 'create-character' | 'host-room' | 'join-room' | 'session'
+/**
+ * Fluxo: home -> host-room | join-room (rede) -> select-profile (ficha) -> session.
+ * `create-character` é um desvio que volta para `returnTo`.
+ */
+export type Screen = 'home' | 'create-character' | 'host-room' | 'join-room' | 'select-profile' | 'session'
 
 interface AppState {
   screen: Screen
+  /** Para onde voltar depois de criar um perfil. */
+  returnTo: Screen
   loading: boolean
   characters: CharacterProfile[]
   activeCharacter: CharacterProfile | null
@@ -13,6 +19,8 @@ interface AppState {
 
   load: () => Promise<void>
   navigate: (screen: Screen) => void
+  /** Abre a criação de perfil e lembra para onde voltar ao salvar/cancelar. */
+  createCharacter: (returnTo: Screen) => void
   saveCharacter: (profile: CharacterProfile) => Promise<void>
   selectCharacter: (id: PlayerId) => Promise<void>
   deleteCharacter: (id: PlayerId) => Promise<void>
@@ -21,6 +29,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   screen: 'home',
+  returnTo: 'home',
   loading: true,
   characters: [],
   activeCharacter: null,
@@ -34,6 +43,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   navigate: (screen) => set({ screen }),
+
+  createCharacter: (returnTo) => set({ screen: 'create-character', returnTo }),
 
   saveCharacter: async (profile) => {
     const saved = await characterRepository.save(profile)

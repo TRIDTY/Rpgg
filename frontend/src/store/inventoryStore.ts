@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Actor, ActorId, InventorySlot, InventoryUpdatedEvent, Item, ItemId } from '../types'
 import { INVENTORY_CAPACITY } from '../data/mockData'
 import { emptyInventory } from '../domain/character'
-import { moveItem as moveItemOp } from '../domain/inventory'
+import { moveItem as moveItemOp, removeItem as removeItemOp } from '../domain/inventory'
 
 export interface Notice {
   id: number
@@ -21,6 +21,7 @@ interface InventoryState {
 
   hydrate: (input: { selfId: ActorId; roomName: string; slots: InventorySlot[]; actors: Actor[] }) => void
   moveItem: (fromSlot: number, toSlot: number) => void
+  removeItem: (slotIndex: number, itemId?: ItemId) => void
   applyInventoryUpdated: (event: InventoryUpdatedEvent) => void
   setActors: (actors: Actor[]) => void
   setActorOnline: (actorId: ActorId, online: boolean) => void
@@ -55,6 +56,12 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   moveItem: (fromSlot, toSlot) =>
     set((state) => {
       const change = moveItemOp(state.slots, fromSlot, toSlot)
+      return change ? { slots: change.slots } : state
+    }),
+
+  removeItem: (slotIndex, itemId) =>
+    set((state) => {
+      const change = removeItemOp(state.slots, slotIndex, itemId)
       return change ? { slots: change.slots } : state
     }),
 

@@ -1,0 +1,101 @@
+.item-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.item-details__icon {
+  width: 108px;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  font-size: 60px;
+  border-radius: 26px;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.45));
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  margin-bottom: 4px;
+}
+
+.item-details__icon--uncommon {
+  border-color: #5dd28a;
+}
+.item-details__icon--rare {
+  border-color: #5ab8ff;
+}
+.item-details__icon--epic {
+  border-color: #c67dff;
+}
+.item-details__icon--legendary {
+  border-color: var(--gold);
+  box-shadow: 0 0 24px rgba(255, 200, 80, 0.35);
+}
+
+.item-details__name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.item-details__meta {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.item-details__rarity {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-size: 11px;
+}
+
+.item-details__rarity--uncommon {
+  color: #5dd28a;
+}
+.item-details__rarity--rare {
+  color: #5ab8ff;
+}
+.item-details__rarity--epic {
+  color: #c67dff;
+}
+.item-details__rarity--legendary {
+  color: var(--gold);
+}
+
+.item-details__qty {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.item-details__qty small {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.item-details__description {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.item-details__description.is-empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}

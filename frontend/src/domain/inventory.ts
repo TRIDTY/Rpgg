@@ -8,7 +8,21 @@ export interface InventoryChange {
 
 const clone = (slots: InventorySlot[]) => slots.map((s) => ({ ...s }))
 
-/** Move/troca/empilha entre dois slots. Retorna null quando nada muda. */
+const descriptionOf = (item: Item) => (item.description ?? '').trim()
+
+/**
+ * Dois itens são a "mesma coisa" (e podem virar uma pilha) quando têm exatamente
+ * o mesmo nome e a mesma descrição e ambos são empilháveis.
+ */
+export function canStack(a: Item, b: Item) {
+  return a.name === b.name && descriptionOf(a) === descriptionOf(b) && a.maxStack > 1 && b.maxStack > 1
+}
+
+/**
+ * Move um item entre dois slots. Se o destino tiver um item igual (nome + descrição)
+ * e ainda houver espaço na pilha, funde as quantidades e esvazia a origem (ou deixa
+ * o excedente nela). Caso contrário troca os dois de lugar. Retorna null quando nada muda.
+ */
 export function moveItem(slots: InventorySlot[], fromSlot: number, toSlot: number): InventoryChange | null {
   if (fromSlot === toSlot) return null
   const next = clone(slots)
@@ -16,10 +30,9 @@ export function moveItem(slots: InventorySlot[], fromSlot: number, toSlot: numbe
   const target = next[toSlot]
   if (!source?.item || !target) return null
 
-  if (target.item && target.item.id === source.item.id && target.item.maxStack > 1) {
-    const room = target.item.maxStack - target.item.quantity
+  const room = target.item && canStack(source.item, target.item) ? target.item.maxStack - target.item.quantity : 0
+  if (target.item && room > 0) {
     const moved = Math.min(room, source.item.quantity)
-    if (moved === 0) return null
     target.item = { ...target.item, quantity: target.item.quantity + moved }
     const remaining = source.item.quantity - moved
     source.item = remaining > 0 ? { ...source.item, quantity: remaining } : null
@@ -31,6 +44,21 @@ export function moveItem(slots: InventorySlot[], fromSlot: number, toSlot: numbe
   return { slots: next, changed: [source, target] }
 }
 
+/** Destrói a pilha de um slot (lixeira). `itemId` protege contra descartar um item que já mudou de lugar. */
+export function removeItem(
+  slots: InventorySlot[],
+  slotIndex: number,
+  itemId?: ItemId,
+): (InventoryChange & { item: Item }) | null {
+  const next = clone(slots)
+  const slot = next[slotIndex]
+  if (!slot?.item) return null
+  if (itemId && slot.item.id !== itemId) return null
+  const item = slot.item
+  slot.item = null
+  return { slots: next, changed: [slot], item }
+}
+
 /** Adiciona um item empilhando no que já existe ou no primeiro slot vazio. Null se não cabe. */
 export function addItem(slots: InventorySlot[], item: Item): InventoryChange | null {
   const next = clone(slots)
@@ -39,7 +67,7 @@ export function addItem(slots: InventorySlot[], item: Item): InventoryChange | n
 
   for (const slot of next) {
     if (remaining === 0) break
-    if (slot.item?.id === item.id && slot.item.quantity < slot.item.maxStack) {
+    if (slot.item && canStack(slot.item, item) && slot.item.quantity < slot.item.maxStack) {
       const add = Math.min(slot.item.maxStack - slot.item.quantity, remaining)
       slot.item = { ...slot.item, quantity: slot.item.quantity + add }
       remaining -= add
