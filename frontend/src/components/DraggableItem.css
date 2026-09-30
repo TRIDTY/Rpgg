@@ -1,0 +1,46 @@
+.draggable-item {
+  cursor: grab;
+  touch-action: manipulation;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.draggable-item:active {
+  cursor: grabbing;
+}
+
+.draggable-item__press-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 14px;
+  border: 2px solid var(--gold);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.draggable-item--pressing {
+  transform: scale(0.94);
+}
+
+.draggable-item--pressing .draggable-item__press-ring {
+  animation: press-ring 220ms linear forwards;
+}
+
+.draggable-item--dragging {
+  opacity: 0.25;
+  transform: scale(0.9);
+  filter: grayscale(0.6);
+}
+
+@keyframes press-ring {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+  to {
+    opacity: 1;
+    scale: 1.05;
+  }
+}
