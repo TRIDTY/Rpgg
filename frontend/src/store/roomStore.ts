@@ -253,5 +253,12 @@ export const useRoomStore = create<RoomState>((set, get) => {
   }
 })
 
+// Fechar/recarregar a aba encerra a sala ou avisa o Host (senão a presença fica "online" para sempre).
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    void useRoomStore.getState().leave()
+  })
+}
+
 export const membersOf = (session: GameSession | null) =>
   session ? Object.values(session.members).map((m) => profileToActor(m.profile, m.online)) : []
