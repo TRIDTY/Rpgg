@@ -17,17 +17,18 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState(ITEM_SPRITES[0].icon)
   const [rarity, setRarity] = useState<ItemRarity>('common')
-  const [quantity, setQuantity] = useState(1)
+  const [quantityText, setQuantityText] = useState('1')
+  const quantity = Number.parseInt(quantityText, 10)
 
   const input: NewItemInput = {
     name,
     description,
     icon,
     rarity,
-    quantity,
+    quantity: quantity >= 1 ? quantity : 1,
     maxStack: Math.max(quantity, 99),
   }
-  const valid = isValidItemInput(input)
+  const valid = quantity >= 1 && isValidItemInput(input)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -107,11 +108,12 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
             <span className="field__label">Qtd.</span>
             <input
               className="input forge__qty"
-              type="number"
-              min={1}
-              max={999}
-              value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={quantityText}
+              onChange={(e) => setQuantityText(e.target.value.replace(/\D/g, '').slice(0, 3))}
+              aria-invalid={!(quantity >= 1)}
             />
           </label>
         </div>

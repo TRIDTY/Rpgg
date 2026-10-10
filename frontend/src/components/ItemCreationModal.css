@@ -66,3 +66,8 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.forge__qty[aria-invalid='true'] {
+  border-color: var(--danger, #ff6b6b);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+}

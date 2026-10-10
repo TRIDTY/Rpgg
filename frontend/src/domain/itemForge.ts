@@ -51,5 +51,11 @@ export function forgeItem(input: NewItemInput): Item {
 }
 
 export function isValidItemInput(input: NewItemInput): boolean {
-  return input.name.trim().length > 0 && input.icon.length > 0 && RARITIES.includes(input.rarity)
+  return (
+    input.name.trim().length > 0 &&
+    input.icon.length > 0 &&
+    RARITIES.includes(input.rarity) &&
+    Number.isInteger(input.quantity) &&
+    input.quantity >= 1
+  )
 }
