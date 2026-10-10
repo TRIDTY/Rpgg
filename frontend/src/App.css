@@ -1,0 +1,41 @@
+.app {
+  height: 100dvh;
+  width: 100vw;
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(72px, 1fr);
+  gap: 10px;
+  padding: 10px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.app--with-bar {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app__bar {
+  grid-column: 1 / -1;
+}
+
+.app__inventory,
+.app__sidebar {
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (max-width: 380px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) 64px;
+    gap: 6px;
+    padding: 6px;
+  }
+}
+
+@media (min-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 4fr) minmax(140px, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+}

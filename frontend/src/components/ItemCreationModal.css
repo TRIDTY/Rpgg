@@ -1,0 +1,73 @@
+.forge {
+  display: grid;
+  gap: 14px;
+}
+
+.forge__target {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(244, 241, 255, 0.7);
+}
+
+.forge__preview {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto;
+  justify-self: center;
+}
+
+.forge__preview .item-tile__icon {
+  font-size: 40px;
+}
+
+.forge__textarea {
+  resize: vertical;
+  min-height: 72px;
+  font-size: 15px;
+}
+
+.forge__qty {
+  width: 84px;
+}
+
+.sprite-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.sprite-picker__option {
+  appearance: none;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  aspect-ratio: 1;
+  font-size: 26px;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+
+.sprite-picker__option.is-selected {
+  border-color: var(--gold);
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(255, 200, 80, 0.45);
+}
+
+.forge__actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.forge__actions .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.forge__qty[aria-invalid='true'] {
+  border-color: var(--danger, #ff6b6b);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
+}

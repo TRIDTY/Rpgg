@@ -1,0 +1,79 @@
+.trade {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.trade__item,
+.trade__target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.trade__icon,
+.trade__avatar {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  font-size: 38px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.trade__avatar {
+  border-radius: 50%;
+  border-color: var(--accent);
+}
+
+.trade__icon--uncommon {
+  border-color: #5dd28a;
+}
+.trade__icon--rare {
+  border-color: #5ab8ff;
+}
+.trade__icon--epic {
+  border-color: #c67dff;
+}
+.trade__icon--legendary {
+  border-color: var(--gold);
+}
+
+.trade__label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.trade__label small {
+  color: var(--gold);
+  margin-left: 4px;
+}
+
+.trade__arrow {
+  font-size: 26px;
+  color: var(--gold);
+  animation: arrow-nudge 1s ease-in-out infinite;
+}
+
+.trade__question {
+  margin: 18px 0 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+@keyframes arrow-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}

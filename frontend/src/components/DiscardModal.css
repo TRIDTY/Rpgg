@@ -1,0 +1,62 @@
+.discard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.discard__icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  font-size: 38px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  animation: discard-shake 1.2s ease-in-out infinite;
+}
+
+.discard__icon--uncommon {
+  border-color: #5dd28a;
+}
+.discard__icon--rare {
+  border-color: #5ab8ff;
+}
+.discard__icon--epic {
+  border-color: #c67dff;
+}
+.discard__icon--legendary {
+  border-color: var(--gold);
+}
+
+.discard__trash {
+  font-size: 44px;
+  filter: drop-shadow(0 0 14px rgba(255, 90, 90, 0.7));
+}
+
+.discard__question {
+  margin: 18px 0 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.discard__confirm {
+  background: linear-gradient(180deg, #ff6b6b, #c62828);
+  color: #fff;
+}
+
+@keyframes discard-shake {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
