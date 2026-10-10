@@ -167,7 +167,7 @@ function HostLobby() {
                 <span className="member__name">{m.name}</span>
                 <br />
                 <span className="member__meta">
-                  {m.role === 'master' ? 'Mestre' : m.title || 'Jogador'}
+                  {m.role === 'master' ? 'Mestre' : m.role === 'bot' ? 'Bot' : m.title || 'Jogador'}
                   {m.id === self?.PlayerId && ' (você)'}
                 </span>
               </span>

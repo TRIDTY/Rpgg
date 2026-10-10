@@ -12,6 +12,7 @@ const ROLE_LABEL: Record<Actor['role'], string> = {
   player: 'Jogador',
   master: 'Mestre',
   merchant: 'Mercador',
+  bot: 'Bot',
 }
 
 export const PlayerAvatarBubble = memo(function PlayerAvatarBubble({ actor, onTap }: Props) {

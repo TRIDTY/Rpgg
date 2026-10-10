@@ -3,11 +3,10 @@ import type { Actor, ActorId, Item, ItemId, NewItemInput, PlayerId } from '../ty
 import { DragDropProvider } from '../dnd/DragDropProvider'
 import { DragOverlay } from '../dnd/DragOverlay'
 import type { DragPayload, DropTarget } from '../dnd/DragDropController'
-import { LOOT_TABLE } from '../data/mockData'
 import { selectActorById, selectItemById, useInventoryStore } from '../store/inventoryStore'
 import { useRoomStore } from '../store/roomStore'
 import { useAppStore } from '../store/appStore'
-import { CreateItem, DiscardItem, InitiateTrade, MoveItem, SetLevel } from '../services/tradeService'
+import { CreateBot, CreateItem, DiscardItem, InitiateTrade, MoveItem, RemoveBot, SetLevel, TakeItem } from '../services/tradeService'
 import { InventoryGrid } from '../components/InventoryGrid'
 import { SessionSidebar } from '../components/SessionSidebar'
 import { TradeModal } from '../components/TradeModal'
@@ -16,6 +15,7 @@ import { ItemCreationModal } from '../components/ItemCreationModal'
 import { PeerInventoryModal } from '../components/PeerInventoryModal'
 import { ItemDetailsModal } from '../components/ItemDetailsModal'
 import { DiscardModal } from '../components/DiscardModal'
+import { BotCreationModal } from '../components/BotCreationModal'
 import { TrashDropZone } from '../components/TrashDropZone'
 import '../App.css'
 import './screens.css'
@@ -28,6 +28,12 @@ interface PendingTrade {
 interface PendingDiscard {
   itemId: ItemId
   slotIndex: number
+}
+
+interface ItemDetails {
+  item: Item
+  /** Mochila de bot aberta pelo Mestre: habilita pegar/descartar. */
+  bot?: { ownerId: PlayerId; slotIndex: number }
 }
 
 interface ForgeTarget {
@@ -44,7 +50,6 @@ export function SessionScreen() {
   const notices = useInventoryStore((s) => s.notices)
   const mode = useRoomStore((s) => s.mode)
   const inventories = useRoomStore((s) => s.inventories)
-  const giveItem = useRoomStore((s) => s.giveItem)
   const leave = useRoomStore((s) => s.leave)
   const navigate = useAppStore((s) => s.navigate)
 
@@ -53,7 +58,8 @@ export function SessionScreen() {
   const [inspectingId, setInspectingId] = useState<ActorId | null>(null)
   const [peerInventoryId, setPeerInventoryId] = useState<PlayerId | null>(null)
   const [forgeTarget, setForgeTarget] = useState<ForgeTarget | null>(null)
-  const [detailsItem, setDetailsItem] = useState<Item | null>(null)
+  const [details, setDetails] = useState<ItemDetails | null>(null)
+  const [creatingBot, setCreatingBot] = useState(false)
 
   const isGameMaster = self?.role === 'master'
   const isHost = mode === 'hosting'
@@ -67,7 +73,7 @@ export function SessionScreen() {
     [isGameMaster, self],
   )
 
-  const handleItemTap = useCallback((item: Item) => setDetailsItem(item), [])
+  const handleItemTap = useCallback((item: Item) => setDetails({ item }), [])
 
   const forgeItem = (input: NewItemInput) => {
     if (forgeTarget) CreateItem(forgeTarget.ownerId, forgeTarget.slotIndex, input)
@@ -113,9 +119,25 @@ export function SessionScreen() {
     setPendingDiscard(null)
   }
 
-  const giveLoot = (actor: Actor) => {
-    const loot = LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)]
-    giveItem(actor.id, loot)
+  const takeFromBot = ({ ownerId, slotIndex }: NonNullable<ItemDetails['bot']>, item: Item) => {
+    TakeItem(ownerId, slotIndex, item.id)
+    setDetails(null)
+  }
+
+  const discardFromBot = ({ ownerId, slotIndex }: NonNullable<ItemDetails['bot']>, item: Item) => {
+    DiscardItem(slotIndex, item.id, ownerId)
+    setDetails(null)
+  }
+
+  const createBot = (name: string, avatar: string) => {
+    CreateBot(name, avatar)
+    setCreatingBot(false)
+  }
+
+  const removeBot = (actor: Actor) => {
+    RemoveBot(actor.id)
+    setInspectingId(null)
+    setPeerInventoryId(null)
   }
 
   return (
@@ -148,7 +170,10 @@ export function SessionScreen() {
           <InventoryGrid onEmptyLongPress={handleEmptySlotLongPress} onItemTap={handleItemTap} />
         </div>
         <div className="app__sidebar">
-          <SessionSidebar onTapActor={(a) => setInspectingId(a.id)} />
+          <SessionSidebar
+            onTapActor={(a) => setInspectingId(a.id)}
+            onAddBot={isGameMaster ? () => setCreatingBot(true) : undefined}
+          />
         </div>
       </main>
 
@@ -178,13 +203,32 @@ export function SessionScreen() {
         <DiscardModal item={discardItem} onConfirm={confirmDiscard} onCancel={() => setPendingDiscard(null)} />
       )}
 
-      {detailsItem && <ItemDetailsModal item={detailsItem} onClose={() => setDetailsItem(null)} />}
+      {details && (
+        <ItemDetailsModal
+          item={details.item}
+          onClose={() => setDetails(null)}
+          actions={
+            details.bot && (
+              <>
+                <button type="button" className="btn btn--gold" onClick={() => details.bot && takeFromBot(details.bot, details.item)}>
+                  🎒 Pegar
+                </button>
+                <button type="button" className="btn btn--danger" onClick={() => details.bot && discardFromBot(details.bot, details.item)}>
+                  🗑️ Descartar
+                </button>
+              </>
+            )
+          }
+        />
+      )}
+
+      {creatingBot && <BotCreationModal onCreate={createBot} onClose={() => setCreatingBot(false)} />}
 
       {inspecting && (
         <PlayerInspectPanel
           actor={inspecting}
           onClose={() => setInspectingId(null)}
-          onGiveLoot={isGameMaster ? giveLoot : undefined}
+          onRemoveBot={isGameMaster ? removeBot : undefined}
           onSetLevel={isGameMaster ? (actor, level) => SetLevel(actor.id, level) : undefined}
           onOpenInventory={
             isGameMaster
@@ -197,15 +241,20 @@ export function SessionScreen() {
         />
       )}
 
-      {isGameMaster && peerActor && peerSlots && !forgeTarget && !detailsItem && (
+      {isGameMaster && peerActor && peerSlots && !forgeTarget && !details && (
         <PeerInventoryModal
           actor={peerActor}
           slots={peerSlots}
+          manageable={peerActor.role === 'bot'}
           onClose={() => setPeerInventoryId(null)}
           onEmptyLongPress={(slotIndex) =>
             setForgeTarget({ ownerId: peerActor.id, ownerName: peerActor.name, slotIndex })
           }
-          onItemTap={handleItemTap}
+          onItemTap={(item, slotIndex) =>
+            setDetails(
+              peerActor.role === 'bot' ? { item, bot: { ownerId: peerActor.id, slotIndex } } : { item },
+            )
+          }
         />
       )}
 

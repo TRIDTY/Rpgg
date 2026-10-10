@@ -17,9 +17,26 @@ export function MoveItem(fromSlot: number, toSlot: number) {
 }
 
 /** Item solto na lixeira: o Host destrói a pilha daquele slot e confirma com InventoryUpdatedEvent. */
-export function DiscardItem(slotIndex: number, itemId: ItemId) {
-  console.log(`DiscardItem(${slotIndex}, ${itemId})`)
-  useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex, itemId })
+export function DiscardItem(slotIndex: number, itemId: ItemId, ownerId?: PlayerId) {
+  console.log(`DiscardItem(${slotIndex}, ${itemId}${ownerId ? `, ${ownerId}` : ''})`)
+  useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex, itemId, ownerId })
+}
+
+/** Mestre retira um item da mochila de um bot para a própria mochila. */
+export function TakeItem(ownerId: PlayerId, slotIndex: number, itemId: ItemId) {
+  console.log(`TakeItem(${ownerId}, ${slotIndex}, ${itemId})`)
+  useRoomStore.getState().sendCommand({ type: 'TakeItem', ownerId, slotIndex, itemId })
+}
+
+/** Mestre cria um bot (NPC/baú/mercador) na sala; a mochila dele fica sob controle total do Mestre. */
+export function CreateBot(name: string, avatar: string) {
+  console.log(`CreateBot(${name})`)
+  useRoomStore.getState().sendCommand({ type: 'CreateBot', name, avatar })
+}
+
+export function RemoveBot(botId: PlayerId) {
+  console.log(`RemoveBot(${botId})`)
+  useRoomStore.getState().sendCommand({ type: 'RemoveBot', botId })
 }
 
 /**

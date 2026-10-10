@@ -22,6 +22,9 @@
 .inspect__avatar--merchant {
   border-color: var(--gold);
 }
+.inspect__avatar--bot {
+  --role-color: #4fd1c5;
+}
 
 .inspect__meta {
   display: flex;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Item } from '../types'
 import { Modal } from './Modal'
 import './ItemDetailsModal.css'
@@ -5,6 +6,8 @@ import './ItemDetailsModal.css'
 interface Props {
   item: Item
   onClose: () => void
+  /** Botões extras (ex.: Mestre pegando/descartando um item de bot). */
+  actions?: ReactNode
 }
 
 const RARITY_LABEL: Record<Item['rarity'], string> = {
@@ -16,7 +19,7 @@ const RARITY_LABEL: Record<Item['rarity'], string> = {
 }
 
 /** Inspeção de item (toque curto em slot ocupado): imagem em destaque, nome e descrição. */
-export function ItemDetailsModal({ item, onClose }: Props) {
+export function ItemDetailsModal({ item, onClose, actions }: Props) {
   return (
     <Modal title="Item" onClose={onClose}>
       <div className="item-details">
@@ -37,6 +40,7 @@ export function ItemDetailsModal({ item, onClose }: Props) {
         </p>
       </div>
       <div className="btn-row">
+        {actions}
         <button type="button" className="btn btn--primary" onClick={onClose}>
           Fechar
         </button>

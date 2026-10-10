@@ -4,7 +4,6 @@ import type {
   ClientCommand,
   GameSession,
   InventorySlot,
-  Item,
   JoinAcceptedEvent,
   JoinRejectedEvent,
   JoinRoomCommand,
@@ -13,7 +12,7 @@ import type {
   SessionMember,
 } from '../types'
 import { MAX_LEVEL, MIN_LEVEL } from '../types'
-import { newId, profileToActor } from '../domain/character'
+import { createCharacter, newId, profileToActor } from '../domain/character'
 import { addItem, moveItem, placeItem, removeItem, takeItem } from '../domain/inventory'
 import { forgeItem, isValidItemInput } from '../domain/itemForge'
 import type { ClientId, ServerAddress, ServerTransport } from './transport'
@@ -28,6 +27,7 @@ export interface HostSessionOptions {
 }
 
 const isGameMaster = (member: SessionMember) => member.profile.Role === 'GM'
+const isBot = (member: SessionMember) => member.profile.Role === 'Bot'
 const isValidLevel = (level: unknown): level is number =>
   typeof level === 'number' && Number.isInteger(level) && level >= MIN_LEVEL && level <= MAX_LEVEL
 
@@ -98,6 +98,7 @@ export class HostSession {
    * estritamente um Mestre por vez (a reconexão do mesmo Mestre é permitida).
    */
   private admissionError(character: CharacterProfile): string | null {
+    if (character.Role === 'Bot') return 'Perfis de bot só existem dentro da sala, criados pelo Mestre.'
     if (character.Role === 'GM') {
       const gm = this.activeGameMaster()
       if (gm && gm.profile.PlayerId !== character.PlayerId) {
@@ -240,14 +241,56 @@ export class HostSession {
         break
       }
       case 'DiscardItem': {
-        const change = removeItem(member.profile.Inventory, command.slotIndex, command.itemId)
+        const owner = this.managedMember(member, command.ownerId ?? playerId)
+        if (!owner) return
+        const change = removeItem(owner.profile.Inventory, command.slotIndex, command.itemId)
         if (!change) {
-          console.warn(`[host] descarte inválido de ${member.profile.Name} no slot ${command.slotIndex}`)
+          console.warn(`[host] descarte inválido de ${member.profile.Name} no slot ${command.slotIndex} de ${owner.profile.Name}`)
           return
         }
-        member.profile.Inventory = change.slots
-        this.inventoryUpdated(playerId, change.changed)
-        console.log(`[host] ${member.profile.Name} descartou ${change.item.icon} ${change.item.name} x${change.item.quantity}`)
+        owner.profile.Inventory = change.slots
+        this.inventoryUpdated(owner.profile.PlayerId, change.changed)
+        console.log(`[host] ${member.profile.Name} descartou ${change.item.icon} ${change.item.name} x${change.item.quantity} de ${owner.profile.Name}`)
+        break
+      }
+      case 'TakeItem': {
+        const owner = this.managedMember(member, command.ownerId)
+        if (!owner || owner === member) return
+        const taken = removeItem(owner.profile.Inventory, command.slotIndex, command.itemId)
+        if (!taken) return
+        const added = addItem(member.profile.Inventory, taken.item)
+        if (!added) {
+          console.warn(`[host] inventário de ${member.profile.Name} cheio; não pegou o item de ${owner.profile.Name}`)
+          return
+        }
+        owner.profile.Inventory = taken.slots
+        member.profile.Inventory = added.slots
+        this.inventoryUpdated(owner.profile.PlayerId, taken.changed)
+        this.inventoryUpdated(playerId, added.changed)
+        console.log(`[host] ${member.profile.Name} pegou ${taken.item.name} x${taken.item.quantity} de ${owner.profile.Name}`)
+        break
+      }
+      case 'CreateBot': {
+        if (!isGameMaster(member)) {
+          console.warn(`[host] ${member.profile.Name} tentou criar bot sem ser Mestre`)
+          return
+        }
+        const name = typeof command.name === 'string' ? command.name.trim() : ''
+        if (!name || typeof command.avatar !== 'string' || !command.avatar) return
+        const bot = this.admit(createCharacter({ name, role: 'Bot', avatar: command.avatar, attributes: {} }))
+        this.broadcastSession()
+        this.notifyGameMasters(bot.profile.PlayerId, bot.profile.Inventory)
+        console.log(`[host] ${member.profile.Name} criou o bot ${bot.profile.Avatar} ${name} (${bot.profile.PlayerId})`)
+        break
+      }
+      case 'RemoveBot': {
+        if (!isGameMaster(member)) return
+        const bot = this.session.members[command.botId]
+        if (!bot || !isBot(bot)) return
+        delete this.session.members[command.botId]
+        this.broadcast({ type: 'ActorPresenceEvent', actorId: command.botId, online: false })
+        this.broadcastSession()
+        console.log(`[host] ${member.profile.Name} removeu o bot ${bot.profile.Name}`)
         break
       }
       case 'InitiateTrade': {
@@ -289,14 +332,6 @@ export class HostSession {
         console.log(`[host] forjou ${item.icon} ${item.name} (${item.id}) no slot ${command.slotIndex} de ${owner.profile.Name}`)
         break
       }
-      case 'GiveItem': {
-        if (!isGameMaster(member)) {
-          console.warn(`[host] ${member.profile.Name} tentou dar item sem ser Mestre`)
-          return
-        }
-        if (!this.giveItem(playerId, command.targetId, command.item)) return
-        break
-      }
       case 'SetLevel': {
         if (!isGameMaster(member)) {
           console.warn(`[host] ${member.profile.Name} tentou alterar nível sem ser Mestre`)
@@ -326,15 +361,13 @@ export class HostSession {
     this.changed()
   }
 
-  private giveItem(fromId: PlayerId, targetId: PlayerId, item: Item): boolean {
-    const target = this.session.members[targetId]
-    if (!target) return false
-    const change = addItem(target.profile.Inventory, item)
-    if (!change) return false
-    target.profile.Inventory = change.slots
-    this.inventoryUpdated(targetId, change.changed)
-    this.sendTo(targetId, { type: 'ItemReceivedEvent', fromId, item })
-    return true
+  /** Mochila que `member` pode editar diretamente: a própria ou, se for Mestre, a de um bot. */
+  private managedMember(member: SessionMember, ownerId: PlayerId): SessionMember | undefined {
+    const owner = this.session.members[ownerId]
+    if (!owner) return undefined
+    if (owner === member || (isGameMaster(member) && isBot(owner))) return owner
+    console.warn(`[host] ${member.profile.Name} não pode editar a mochila de ${owner.profile.Name}`)
+    return undefined
   }
 
   private onDisconnect(clientId: ClientId) {

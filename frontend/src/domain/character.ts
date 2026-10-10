@@ -1,5 +1,5 @@
 import type { Actor, AttributeValue, CharacterProfile, InventorySlot, Item, PlayerRole } from '../types'
-import { INVENTORY_CAPACITY, STARTER_KIT } from '../data/mockData'
+import { INVENTORY_CAPACITY } from '../data/mockData'
 
 export const DEFAULT_ATTRIBUTES: Record<string, AttributeValue> = {
   Força: 10,
@@ -39,7 +39,6 @@ export interface NewCharacterInput {
   avatar: string
   title?: string
   attributes: Record<string, AttributeValue>
-  starterKit: boolean
 }
 
 export function createCharacter(input: NewCharacterInput): CharacterProfile {
@@ -52,7 +51,7 @@ export function createCharacter(input: NewCharacterInput): CharacterProfile {
     Title: input.title?.trim() || undefined,
     Level: 1,
     Attributes: { ...input.attributes },
-    Inventory: input.starterKit ? inventoryWithItems(STARTER_KIT) : emptyInventory(),
+    Inventory: emptyInventory(),
     CreatedAt: now,
     UpdatedAt: now,
   }
@@ -62,7 +61,7 @@ export function profileToActor(profile: CharacterProfile, online: boolean): Acto
   return {
     id: profile.PlayerId,
     name: profile.Name,
-    role: profile.Role === 'GM' ? 'master' : 'player',
+    role: profile.Role === 'GM' ? 'master' : profile.Role === 'Bot' ? 'bot' : 'player',
     avatar: profile.Avatar,
     online,
     level: profile.Level,

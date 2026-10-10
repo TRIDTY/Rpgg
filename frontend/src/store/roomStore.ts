@@ -4,7 +4,6 @@ import type {
   ClientCommand,
   GameSession,
   InventorySlot,
-  Item,
   JoinAcceptedEvent,
   PlayerId,
   RoomInfo,
@@ -47,7 +46,6 @@ interface RoomState {
   joinAs: (profile: CharacterProfile) => Promise<boolean>
   leave: () => Promise<void>
   sendCommand: (command: ClientCommand) => void
-  giveItem: (targetId: PlayerId, item: Item) => void
   clearError: () => void
 }
 
@@ -261,10 +259,6 @@ export const useRoomStore = create<RoomState>((set, get) => {
       if (host) host.handleLocalCommand(command)
       else if (client) client.send(command)
       else console.warn('[room] sem sessão ativa; comando descartado', command)
-    },
-
-    giveItem: (targetId, item) => {
-      get().sendCommand({ type: 'GiveItem', targetId, item })
     },
 
     clearError: () => set({ error: null }),

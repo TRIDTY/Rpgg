@@ -7,21 +7,22 @@ import './PlayerInspectPanel.css'
 interface Props {
   actor: Actor
   onClose: () => void
-  /** Ferramenta do Mestre: entrega um item aleatório do catálogo ao ator. */
-  onGiveLoot?: (actor: Actor) => void
   /** Ferramenta do Mestre: abre a mochila do jogador para editar/forjar itens. */
   onOpenInventory?: (actor: Actor) => void
   /** Ferramenta do Mestre: define o Nível da ficha do ator (validado e propagado pelo Host). */
   onSetLevel?: (actor: Actor, level: number) => void
+  /** Ferramenta do Mestre: apaga um bot da sala (com a mochila dele). */
+  onRemoveBot?: (actor: Actor) => void
 }
 
 const ROLE_LABEL: Record<Actor['role'], string> = {
   player: 'Jogador',
   master: 'Mestre da Sessão',
   merchant: 'NPC Mercador',
+  bot: 'Bot do Mestre',
 }
 
-export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory, onSetLevel }: Props) {
+export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel, onRemoveBot }: Props) {
   const canSeeEquipment = actor.role !== 'master'
 
   return (
@@ -61,16 +62,14 @@ export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory
           <p className="inspect__empty">O Mestre não expõe equipamentos.</p>
         )}
 
-        {actor.role === 'player' && (onGiveLoot || onOpenInventory) && (
+        {(actor.role === 'player' || actor.role === 'bot') && onOpenInventory && (
           <div className="btn-row">
-            {onOpenInventory && (
-              <button type="button" className="btn" onClick={() => onOpenInventory(actor)}>
-                🎒 Abrir mochila
-              </button>
-            )}
-            {onGiveLoot && (
-              <button type="button" className="btn btn--gold" onClick={() => onGiveLoot(actor)}>
-                🎁 Dar loot
+            <button type="button" className="btn" onClick={() => onOpenInventory(actor)}>
+              🎒 Abrir mochila
+            </button>
+            {actor.role === 'bot' && onRemoveBot && (
+              <button type="button" className="btn btn--danger" onClick={() => onRemoveBot(actor)}>
+                🗑️ Remover bot
               </button>
             )}
           </div>

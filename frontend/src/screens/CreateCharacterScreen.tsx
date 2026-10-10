@@ -29,7 +29,6 @@ export function CreateCharacterScreen() {
   const [role, setRole] = useState<PlayerRole>('Player')
   const [avatar, setAvatar] = useState(AVATAR_OPTIONS[0])
   const [rows, setRows] = useState<AttributeRow[]>(() => toRows(DEFAULT_ATTRIBUTES))
-  const [starterKit, setStarterKit] = useState(true)
   const [saving, setSaving] = useState(false)
 
   const updateRow = (i: number, patch: Partial<AttributeRow>) =>
@@ -41,7 +40,7 @@ export function CreateCharacterScreen() {
     setSaving(true)
     const attributes: Record<string, AttributeValue> = {}
     for (const r of rows) if (r.key.trim()) attributes[r.key.trim()] = parseValue(r.value)
-    const profile = createCharacter({ name, title, role, avatar, attributes, starterKit })
+    const profile = createCharacter({ name, title, role, avatar, attributes })
     console.log('[save] personagem criado', profile)
     await saveCharacter(profile)
     setSaving(false)
@@ -159,11 +158,6 @@ export function CreateCharacterScreen() {
             </button>
           </div>
         </div>
-
-        <label className="checkbox">
-          <input type="checkbox" checked={starterKit} onChange={(e) => setStarterKit(e.target.checked)} />
-          Começar com o kit inicial (espada, poções, ouro, pão e tocha)
-        </label>
 
         <button type="submit" className="btn btn--primary btn--block" disabled={!name.trim() || saving}>
           {saving ? 'Salvando…' : '💾 Salvar ficha'}

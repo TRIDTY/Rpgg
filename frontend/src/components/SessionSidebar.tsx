@@ -5,9 +5,11 @@ import './SessionSidebar.css'
 
 interface Props {
   onTapActor: (actor: Actor) => void
+  /** Mestre: cria um bot (NPC/baú) cuja mochila ele controla. */
+  onAddBot?: () => void
 }
 
-export function SessionSidebar({ onTapActor }: Props) {
+export function SessionSidebar({ onTapActor, onAddBot }: Props) {
   const actors = useInventoryStore((s) => s.actors)
   const connected = useInventoryStore((s) => s.connected)
 
@@ -21,6 +23,12 @@ export function SessionSidebar({ onTapActor }: Props) {
         {actors.map((actor) => (
           <PlayerAvatarBubble key={actor.id} actor={actor} onTap={onTapActor} />
         ))}
+        {onAddBot && (
+          <button type="button" className="session-sidebar__add" onClick={onAddBot} aria-label="Adicionar bot">
+            <span className="session-sidebar__add-icon">+</span>
+            <span className="session-sidebar__add-label">Bot</span>
+          </button>
+        )}
       </div>
     </aside>
   )

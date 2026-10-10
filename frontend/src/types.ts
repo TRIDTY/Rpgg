@@ -24,7 +24,7 @@ export interface Inventory {
   slots: InventorySlot[]
 }
 
-export type ActorRole = 'player' | 'master' | 'merchant'
+export type ActorRole = 'player' | 'master' | 'merchant' | 'bot'
 
 export interface Actor {
   id: ActorId
@@ -42,7 +42,8 @@ export interface Actor {
 // ---------------------------------------------------------------------------
 
 export type PlayerId = string
-export type PlayerRole = 'Player' | 'GM'
+/** `Bot`: personagem sem aparelho, criado pelo Mestre dentro da sala e controlado por ele. */
+export type PlayerRole = 'Player' | 'GM' | 'Bot'
 
 export type AttributeValue = string | number | boolean
 
@@ -189,22 +190,36 @@ export interface NewItemInput {
 /** Jogador solta um item na lixeira: o Host destrói a pilha inteira daquele slot. */
 export interface DiscardItemCommand {
   type: 'DiscardItem'
+  /** Mochila alvo; omitido = a própria. O Mestre pode indicar um bot. */
+  ownerId?: PlayerId
   slotIndex: number
   itemId: ItemId
 }
 
 /** Mestre entrega um item pronto (ex.: loot do catálogo) a um membro. */
-export interface GiveItemCommand {
-  type: 'GiveItem'
-  targetId: PlayerId
-  item: Item
-}
-
 /** Mestre define o Nível de qualquer personagem conectado à sala. */
 export interface SetLevelCommand {
   type: 'SetLevel'
   targetId: PlayerId
   level: number
+}
+
+export interface TakeItemCommand {
+  type: 'TakeItem'
+  ownerId: PlayerId
+  slotIndex: number
+  itemId: ItemId
+}
+
+export interface CreateBotCommand {
+  type: 'CreateBot'
+  name: string
+  avatar: string
+}
+
+export interface RemoveBotCommand {
+  type: 'RemoveBot'
+  botId: PlayerId
 }
 
 export const MIN_LEVEL = 1
@@ -216,5 +231,7 @@ export type ClientCommand =
   | InitiateTradeCommand
   | CreateItemCommand
   | DiscardItemCommand
-  | GiveItemCommand
+  | TakeItemCommand
+  | CreateBotCommand
+  | RemoveBotCommand
   | SetLevelCommand
