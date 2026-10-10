@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Inventário RPG</string>
+    <string name="title_activity_main">Inventário RPG</string>
+    <string name="package_name">com.tridev.rpgg</string>
+    <string name="custom_url_scheme">com.tridev.rpgg</string>
+</resources>

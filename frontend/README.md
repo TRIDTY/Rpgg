@@ -20,10 +20,27 @@ Para conectar ao backend real:
 VITE_WS_URL=ws://localhost:8080/ws npm run dev
 ```
 
-## Demo para celular (arquivo único)
+## App Android (APK)
 
-`npm run build:demo` gera `../demo/inventario-demo.html`, um HTML autocontido (JS + CSS embutidos, cliente mock).
-Basta baixar o arquivo no celular e abrir com o Chrome (Android) — não precisa de servidor.
+APK debug pronto para instalar: [`demo/inventario-demo.apk`](../demo/inventario-demo.apk) (baixe no celular, abra o
+arquivo e aceite "instalar de fonte desconhecida"). Nele, **Criar Nova Sala** sobe um servidor WebSocket de verdade na
+Wi-Fi do aparelho (plugin nativo `RoomServer`, Java-WebSocket) e mostra o IP real; outros celulares com o app entram
+pelo IP:porta ou QR. As fichas ficam em arquivos JSON no armazenamento do app (Capacitor Filesystem).
+
+Para gerar o APK (Node 22, JDK 21 e Android SDK com `platforms;android-36` + `build-tools;36.0.0`; `ANDROID_HOME`
+apontando para o SDK ou `android/local.properties` com `sdk.dir=`):
+
+```bash
+npm run build:apk   # build web + cap sync + gradle assembleDebug → ../demo/inventario-demo.apk
+```
+
+Projeto nativo em `android/` (Capacitor 8). Plugin do servidor: `android/app/src/main/java/com/tridev/rpgg/RoomServerPlugin.java`,
+contrato TypeScript em `src/room/nativeRoomServer.ts`.
+
+## Demo para celular (arquivo único, sem instalar)
+
+`npm run build:demo` gera `../demo/inventario-demo.html`, um HTML autocontido (JS + CSS embutidos, sala loopback no
+mesmo navegador). Basta baixar o arquivo no celular e abrir com o Chrome (Android) — não precisa de servidor.
 
 ## Estrutura
 
