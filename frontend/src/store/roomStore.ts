@@ -85,9 +85,23 @@ export const useRoomStore = create<RoomState>((set, get) => {
         break
       case 'ActorPresenceEvent':
         inv.setActorOnline(event.actorId, event.online)
+        if (!event.online) {
+          set((s) => {
+            const { [event.actorId]: _gone, ...inventories } = s.inventories
+            return { inventories }
+          })
+        }
         break
       case 'SessionUpdatedEvent':
         inv.setActors(event.actors)
+        break
+      case 'LevelChangedEvent':
+        if (event.playerId === selfId) {
+          const by = inv.actors.find((a) => a.id === event.byId)
+          inv.pushNotice(`${by?.name ?? 'O Mestre'} definiu seu nível para ${event.level}`)
+          set((s) => ({ self: s.self && { ...s.self, Level: event.level } }))
+          void characterRepository.updateLevel(selfId, event.level)
+        }
         break
       case 'ItemReceivedEvent': {
         const from = inv.actors.find((a) => a.id === event.fromId)
@@ -209,8 +223,12 @@ export const useRoomStore = create<RoomState>((set, get) => {
     joinAs: async (profile) => {
       const { mode } = get()
       if (host && mode === 'hosting') {
-        const accepted = host.joinLocal(profile)
-        applyAccepted(profile, accepted)
+        const result = host.joinLocal(profile)
+        if (result.type === 'JoinRejected') {
+          set({ error: result.reason })
+          return false
+        }
+        applyAccepted(profile, result)
         return true
       }
       if (client && (mode === 'lobby' || mode === 'joined')) {
@@ -260,5 +278,10 @@ if (typeof window !== 'undefined') {
   })
 }
 
+/** Membros conectados agora — quem saiu não aparece em lista nenhuma. */
 export const membersOf = (session: GameSession | null) =>
-  session ? Object.values(session.members).map((m) => profileToActor(m.profile, m.online)) : []
+  session
+    ? Object.values(session.members)
+        .filter((m) => m.online)
+        .map((m) => profileToActor(m.profile, true))
+    : []

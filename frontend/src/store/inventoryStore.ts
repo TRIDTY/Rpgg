@@ -77,11 +77,18 @@ export const useInventoryStore = create<InventoryState>((set) => ({
       return { slots }
     }),
 
-  setActors: (actors) => set((state) => ({ actors: actors.filter((a) => a.id !== state.selfId) })),
+  setActors: (actors) =>
+    set((state) => ({
+      self: actors.find((a) => a.id === state.selfId) ?? state.self,
+      actors: actors.filter((a) => a.id !== state.selfId),
+    })),
 
+  /** Quem desconecta some da sidebar; só membros ativos ficam visíveis. */
   setActorOnline: (actorId, online) =>
     set((state) => ({
-      actors: state.actors.map((a) => (a.id === actorId ? { ...a, online } : a)),
+      actors: online
+        ? state.actors.map((a) => (a.id === actorId ? { ...a, online } : a))
+        : state.actors.filter((a) => a.id !== actorId),
     })),
 
   setConnected: (connected) => set({ connected }),

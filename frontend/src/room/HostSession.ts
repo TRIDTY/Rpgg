@@ -6,11 +6,13 @@ import type {
   InventorySlot,
   Item,
   JoinAcceptedEvent,
+  JoinRejectedEvent,
   JoinRoomCommand,
   PlayerId,
   ServerEvent,
   SessionMember,
 } from '../types'
+import { MAX_LEVEL, MIN_LEVEL } from '../types'
 import { newId, profileToActor } from '../domain/character'
 import { addItem, moveItem, placeItem, removeItem, takeItem } from '../domain/inventory'
 import { forgeItem, isValidItemInput } from '../domain/itemForge'
@@ -26,6 +28,8 @@ export interface HostSessionOptions {
 }
 
 const isGameMaster = (member: SessionMember) => member.profile.Role === 'GM'
+const isValidLevel = (level: unknown): level is number =>
+  typeof level === 'number' && Number.isInteger(level) && level >= MIN_LEVEL && level <= MAX_LEVEL
 
 /**
  * Fonte da verdade da sessão. Roda no aparelho que criou a sala: valida o
@@ -75,8 +79,32 @@ export class HostSession {
     await this.transport.stop()
   }
 
+  /** Só quem está conectado agora aparece para os membros; quem saiu some da sidebar. */
   actors(): Actor[] {
-    return Object.values(this.session.members).map((m) => profileToActor(m.profile, m.online))
+    return this.onlineMembers().map((m) => profileToActor(m.profile, true))
+  }
+
+  private onlineMembers(): SessionMember[] {
+    return Object.values(this.session.members).filter((m) => m.online)
+  }
+
+  /** Mestre ativo na sala (no máximo um), se houver. */
+  activeGameMaster(): SessionMember | undefined {
+    return this.onlineMembers().find(isGameMaster)
+  }
+
+  /**
+   * Regras de admissão comuns ao Host local e aos clientes: cada sala abriga
+   * estritamente um Mestre por vez (a reconexão do mesmo Mestre é permitida).
+   */
+  private admissionError(character: CharacterProfile): string | null {
+    if (character.Role === 'GM') {
+      const gm = this.activeGameMaster()
+      if (gm && gm.profile.PlayerId !== character.PlayerId) {
+        return `A sala já tem um Mestre ativo (${gm.profile.Name}). Entre com um perfil de Jogador.`
+      }
+    }
+    return null
   }
 
   inventoryOf(playerId: PlayerId): InventorySlot[] | undefined {
@@ -84,7 +112,12 @@ export class HostSession {
   }
 
   /** O aparelho Host entra na própria sala com um perfil, sem passar pela rede. */
-  joinLocal(profile: CharacterProfile): JoinAcceptedEvent {
+  joinLocal(profile: CharacterProfile): JoinAcceptedEvent | JoinRejectedEvent {
+    const error = this.admissionError(profile)
+    if (error) {
+      console.warn(`[host] entrada local de ${profile.Name} (${profile.Role}) recusada: ${error}`)
+      return { type: 'JoinRejected', reason: error }
+    }
     const member = this.admit(profile)
     this.session.hostId = profile.PlayerId
     const accepted = this.acceptedEvent(member)
@@ -126,9 +159,9 @@ export class HostSession {
   }
 
   private handleJoin(clientId: ClientId, command: JoinRoomCommand) {
-    const reject = (reason: string) => {
+    const reject = (reason: string, disconnect = true) => {
       this.transport.send(clientId, JSON.stringify({ type: 'JoinRejected', reason } satisfies ServerEvent))
-      this.transport.disconnect(clientId)
+      if (disconnect) this.transport.disconnect(clientId)
     }
     if (command.password !== this.session.password) return reject('Senha da sala incorreta')
     const character = command.character
@@ -136,6 +169,11 @@ export class HostSession {
       return reject('Ficha de personagem inválida')
     }
     if (character.PlayerId === this.session.hostId) return reject('Esse perfil já está em uso pelo Host')
+    const error = this.admissionError(character)
+    if (error) {
+      console.warn(`[host] ${character.Name} (${character.Role}) recusado: ${error}`)
+      return reject(error, false)
+    }
 
     const previousClient = this.clientOf.get(character.PlayerId)
     if (previousClient && previousClient !== clientId) {
@@ -259,6 +297,29 @@ export class HostSession {
         if (!this.giveItem(playerId, command.targetId, command.item)) return
         break
       }
+      case 'SetLevel': {
+        if (!isGameMaster(member)) {
+          console.warn(`[host] ${member.profile.Name} tentou alterar nível sem ser Mestre`)
+          return
+        }
+        const target = this.session.members[command.targetId]
+        if (!target || !isValidLevel(command.level)) {
+          console.warn(`[host] SetLevel inválido de ${member.profile.Name}`, command)
+          return
+        }
+        if (target.profile.Level === command.level) return
+        target.profile.Level = command.level
+        target.profile.UpdatedAt = new Date().toISOString()
+        this.broadcastSession()
+        this.sendTo(command.targetId, {
+          type: 'LevelChangedEvent',
+          playerId: command.targetId,
+          level: command.level,
+          byId: playerId,
+        })
+        console.log(`[host] ${member.profile.Name} definiu nível ${command.level} para ${target.profile.Name}`)
+        break
+      }
       case 'JoinRoom':
         break
     }
@@ -284,6 +345,7 @@ export class HostSession {
     const member = this.session.members[playerId]
     if (member) member.online = false
     this.broadcast({ type: 'ActorPresenceEvent', actorId: playerId, online: false })
+    this.broadcastSession()
     this.changed()
   }
 

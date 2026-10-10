@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { Actor } from '../types'
+import { MAX_LEVEL, MIN_LEVEL } from '../types'
 import { Modal } from './Modal'
 import './PlayerInspectPanel.css'
 
@@ -9,6 +11,8 @@ interface Props {
   onGiveLoot?: (actor: Actor) => void
   /** Ferramenta do Mestre: abre a mochila do jogador para editar/forjar itens. */
   onOpenInventory?: (actor: Actor) => void
+  /** Ferramenta do Mestre: define o Nível da ficha do ator (validado e propagado pelo Host). */
+  onSetLevel?: (actor: Actor, level: number) => void
 }
 
 const ROLE_LABEL: Record<Actor['role'], string> = {
@@ -17,7 +21,7 @@ const ROLE_LABEL: Record<Actor['role'], string> = {
   merchant: 'NPC Mercador',
 }
 
-export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory }: Props) {
+export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory, onSetLevel }: Props) {
   const canSeeEquipment = actor.role !== 'master'
 
   return (
@@ -28,12 +32,16 @@ export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory
           <div className="inspect__meta">
             <span className="inspect__role">{ROLE_LABEL[actor.role]}</span>
             {actor.title && <span className="inspect__title">{actor.title}</span>}
-            {actor.level !== undefined && <span className="inspect__level">Nível {actor.level}</span>}
+            {actor.level !== undefined && !onSetLevel && <span className="inspect__level">Nível {actor.level}</span>}
             <span className={`inspect__status ${actor.online ? 'is-online' : ''}`}>
               {actor.online ? 'Online' : 'Offline'}
             </span>
           </div>
         </div>
+
+        {onSetLevel && actor.level !== undefined && (
+          <LevelEditor key={actor.level} level={actor.level} onChange={(level) => onSetLevel(actor, level)} />
+        )}
 
         <h3 className="inspect__section">Equipado</h3>
         {canSeeEquipment ? (
@@ -69,5 +77,62 @@ export function PlayerInspectPanel({ actor, onClose, onGiveLoot, onOpenInventory
         )}
       </div>
     </Modal>
+  )
+}
+
+const clampLevel = (value: number) => Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, Math.trunc(value)))
+
+/** Controle do Mestre: −/+ aplicam na hora; o campo numérico aplica ao sair/Enter. */
+function LevelEditor({ level, onChange }: { level: number; onChange: (level: number) => void }) {
+  const [draft, setDraft] = useState(String(level))
+
+  const commit = (value: number) => {
+    if (!Number.isFinite(value)) {
+      setDraft(String(level))
+      return
+    }
+    const next = clampLevel(value)
+    setDraft(String(next))
+    if (next !== level) onChange(next)
+  }
+
+  return (
+    <div className="level-editor" role="group" aria-label="Nível do personagem">
+      <span className="inspect__section level-editor__label">Nível (Mestre)</span>
+      <div className="level-editor__controls">
+        <button
+          type="button"
+          className="level-editor__step"
+          onClick={() => commit(level - 1)}
+          disabled={level <= MIN_LEVEL}
+          aria-label="Diminuir nível"
+        >
+          −
+        </button>
+        <input
+          className="level-editor__input"
+          type="number"
+          inputMode="numeric"
+          min={MIN_LEVEL}
+          max={MAX_LEVEL}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => commit(Number(draft))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+          }}
+          aria-label="Nível"
+        />
+        <button
+          type="button"
+          className="level-editor__step"
+          onClick={() => commit(level + 1)}
+          disabled={level >= MAX_LEVEL}
+          aria-label="Aumentar nível"
+        >
+          +
+        </button>
+      </div>
+    </div>
   )
 }

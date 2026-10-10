@@ -112,3 +112,67 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
 }
+
+.level-editor {
+  margin-top: 18px;
+}
+
+.level-editor__label {
+  display: block;
+  margin: 0 0 8px;
+}
+
+.level-editor__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.level-editor__step {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.level-editor__step:active {
+  transform: scale(0.94);
+}
+
+.level-editor__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.level-editor__input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 215, 120, 0.4);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--gold);
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.level-editor__input::-webkit-outer-spin-button,
+.level-editor__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.level-editor__input:focus {
+  outline: none;
+  border-color: var(--gold);
+}

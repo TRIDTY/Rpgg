@@ -7,7 +7,7 @@ import { LOOT_TABLE } from '../data/mockData'
 import { selectActorById, selectItemById, useInventoryStore } from '../store/inventoryStore'
 import { useRoomStore } from '../store/roomStore'
 import { useAppStore } from '../store/appStore'
-import { CreateItem, DiscardItem, InitiateTrade, MoveItem } from '../services/tradeService'
+import { CreateItem, DiscardItem, InitiateTrade, MoveItem, SetLevel } from '../services/tradeService'
 import { InventoryGrid } from '../components/InventoryGrid'
 import { SessionSidebar } from '../components/SessionSidebar'
 import { TradeModal } from '../components/TradeModal'
@@ -185,6 +185,7 @@ export function SessionScreen() {
           actor={inspecting}
           onClose={() => setInspectingId(null)}
           onGiveLoot={isGameMaster ? giveLoot : undefined}
+          onSetLevel={isGameMaster ? (actor, level) => SetLevel(actor.id, level) : undefined}
           onOpenInventory={
             isGameMaster
               ? (actor) => {

@@ -37,6 +37,12 @@ export class CharacterRepository {
     return this.save({ ...current, Inventory: inventory })
   }
 
+  async updateLevel(id: PlayerId, level: number) {
+    const current = await this.get(id)
+    if (!current) return null
+    return this.save({ ...current, Level: level })
+  }
+
   remove(id: PlayerId) {
     return this.store.remove(CHARACTERS, id)
   }

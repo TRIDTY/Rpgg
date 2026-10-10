@@ -130,6 +130,14 @@ export interface ItemReceivedEvent {
   item: Item
 }
 
+/** O Mestre alterou o Nível da ficha de um membro; o aparelho dele persiste no save game. */
+export interface LevelChangedEvent {
+  type: 'LevelChangedEvent'
+  playerId: PlayerId
+  level: number
+  byId: PlayerId
+}
+
 export type ServerEvent =
   | InventoryUpdatedEvent
   | ActorPresenceEvent
@@ -137,6 +145,7 @@ export type ServerEvent =
   | JoinAcceptedEvent
   | JoinRejectedEvent
   | ItemReceivedEvent
+  | LevelChangedEvent
 
 // ---------------------------------------------------------------------------
 // Comandos Cliente -> Host
@@ -191,6 +200,16 @@ export interface GiveItemCommand {
   item: Item
 }
 
+/** Mestre define o Nível de qualquer personagem conectado à sala. */
+export interface SetLevelCommand {
+  type: 'SetLevel'
+  targetId: PlayerId
+  level: number
+}
+
+export const MIN_LEVEL = 1
+export const MAX_LEVEL = 99
+
 export type ClientCommand =
   | JoinRoomCommand
   | MoveItemCommand
@@ -198,3 +217,4 @@ export type ClientCommand =
   | CreateItemCommand
   | DiscardItemCommand
   | GiveItemCommand
+  | SetLevelCommand

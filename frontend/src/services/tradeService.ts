@@ -31,3 +31,9 @@ export function CreateItem(ownerId: PlayerId, slotIndex: number, item: NewItemIn
   console.log(`CreateItem(${ownerId}, ${slotIndex}, ${item.name})`)
   useRoomStore.getState().sendCommand({ type: 'CreateItem', ownerId, slotIndex, item })
 }
+
+/** Mestre altera o Nível da ficha de um membro; o Host valida a Role e avisa o aparelho dele para salvar. */
+export function SetLevel(targetId: PlayerId, level: number) {
+  console.log(`SetLevel(${targetId}, ${level})`)
+  useRoomStore.getState().sendCommand({ type: 'SetLevel', targetId, level })
+}
