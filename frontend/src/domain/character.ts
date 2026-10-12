@@ -10,7 +10,183 @@ export const DEFAULT_ATTRIBUTES: Record<string, AttributeValue> = {
   Carisma: 10,
 }
 
-export const AVATAR_OPTIONS = ['🧝', '🧔', '🧚', '🧙', '🧛', '🧜', '🦹', '🧑‍🚀', '🐺', '🐉', '🦊', '🤖']
+export interface AvatarOption {
+  icon: string
+  label: string
+}
+
+export interface AvatarCategory {
+  id: string
+  label: string
+  avatars: AvatarOption[]
+}
+
+const avatars = (pairs: [string, string][]): AvatarOption[] =>
+  pairs.map(([icon, label]) => ({ icon, label }))
+
+export const AVATAR_CATEGORIES: AvatarCategory[] = [
+  {
+    id: 'heroes',
+    label: '🧙 Heróis',
+    avatars: avatars([
+      ['🧝', 'Elfo'],
+      ['🧝‍♀️', 'Elfa'],
+      ['🧔', 'Anão'],
+      ['🧙', 'Mago'],
+      ['🧙‍♀️', 'Feiticeira'],
+      ['🧚', 'Fada'],
+      ['🧛', 'Vampiro'],
+      ['🧜', 'Tritão'],
+      ['🧜‍♀️', 'Sereia'],
+      ['🦸', 'Herói'],
+      ['🦸‍♀️', 'Heroína'],
+      ['🦹', 'Vilão'],
+      ['🧞', 'Gênio'],
+      ['🧌', 'Troll'],
+      ['🤴', 'Príncipe'],
+      ['👸', 'Princesa'],
+      ['🫅', 'Monarca'],
+      ['🥷', 'Ninja'],
+      ['🤺', 'Esgrimista'],
+      ['🏇', 'Cavaleiro'],
+      ['💂', 'Guarda'],
+      ['🕵️', 'Espião'],
+      ['🤠', 'Pistoleiro'],
+      ['👼', 'Anjo'],
+      ['🧑‍🚀', 'Explorador'],
+    ]),
+  },
+  {
+    id: 'folk',
+    label: '🧑‍🌾 Povo',
+    avatars: avatars([
+      ['🧑', 'Aventureiro'],
+      ['👩', 'Aventureira'],
+      ['👨', 'Viajante'],
+      ['👴', 'Ancião'],
+      ['👵', 'Anciã'],
+      ['🧓', 'Sábio'],
+      ['👶', 'Criança'],
+      ['👳', 'Nômade'],
+      ['🧕', 'Peregrina'],
+      ['👲', 'Monge'],
+      ['🧑‍🌾', 'Camponês'],
+      ['🧑‍🍳', 'Cozinheiro'],
+      ['🧑‍🔬', 'Alquimista'],
+      ['🧑‍🏭', 'Ferreiro'],
+      ['🧑‍⚕️', 'Curandeiro'],
+      ['🧑‍🎨', 'Artista'],
+      ['🧑‍🎤', 'Bardo'],
+      ['🧑‍🎓', 'Erudito'],
+      ['🧑‍💼', 'Mercador'],
+      ['🧑‍✈️', 'Capitão'],
+      ['🧑‍🔧', 'Engenhoqueiro'],
+      ['👮', 'Patrulheiro'],
+      ['🧑‍🦽', 'Veterano'],
+      ['🤡', 'Bufão'],
+    ]),
+  },
+  {
+    id: 'dark',
+    label: '👹 Sombrios',
+    avatars: avatars([
+      ['👹', 'Ogro'],
+      ['👺', 'Duende'],
+      ['👻', 'Fantasma'],
+      ['💀', 'Caveira'],
+      ['☠️', 'Morto-vivo'],
+      ['🧟', 'Zumbi'],
+      ['😈', 'Demônio'],
+      ['👿', 'Diabrete'],
+      ['👽', 'Alienígena'],
+      ['👾', 'Invasor'],
+      ['🤖', 'Autômato'],
+      ['🎃', 'Abóbora'],
+      ['🗿', 'Golem'],
+      ['🔥', 'Elemental de fogo'],
+      ['🌊', 'Elemental de água'],
+      ['🌪️', 'Elemental de ar'],
+      ['🪨', 'Elemental de terra'],
+      ['⚡', 'Elemental de raio'],
+      ['🌑', 'Sombra'],
+      ['👁️', 'Observador'],
+    ]),
+  },
+  {
+    id: 'beasts',
+    label: '🐺 Feras',
+    avatars: avatars([
+      ['🐺', 'Lobo'],
+      ['🦊', 'Raposa'],
+      ['🐻', 'Urso'],
+      ['🐻‍❄️', 'Urso polar'],
+      ['🦁', 'Leão'],
+      ['🐯', 'Tigre'],
+      ['🐆', 'Leopardo'],
+      ['🐗', 'Javali'],
+      ['🦌', 'Cervo'],
+      ['🐴', 'Cavalo'],
+      ['🦄', 'Unicórnio'],
+      ['🐂', 'Touro'],
+      ['🐏', 'Carneiro'],
+      ['🐐', 'Bode'],
+      ['🐘', 'Elefante'],
+      ['🦏', 'Rinoceronte'],
+      ['🦍', 'Gorila'],
+      ['🐒', 'Macaco'],
+      ['🐱', 'Gato'],
+      ['🐶', 'Cão'],
+      ['🐭', 'Camundongo'],
+      ['🐰', 'Coelho'],
+      ['🦝', 'Guaxinim'],
+      ['🦡', 'Texugo'],
+      ['🦇', 'Morcego'],
+      ['🦉', 'Coruja'],
+      ['🦅', 'Águia'],
+      ['🦜', 'Papagaio'],
+      ['🐦‍⬛', 'Corvo'],
+      ['🦢', 'Cisne'],
+      ['🐓', 'Galo'],
+      ['🦆', 'Pato'],
+      ['🐧', 'Pinguim'],
+    ]),
+  },
+  {
+    id: 'creatures',
+    label: '🐉 Criaturas',
+    avatars: avatars([
+      ['🐉', 'Dragão'],
+      ['🐲', 'Dragão jovem'],
+      ['🦕', 'Dinossauro'],
+      ['🦖', 'Tiranossauro'],
+      ['🐊', 'Crocodilo'],
+      ['🐍', 'Serpente'],
+      ['🦎', 'Lagarto'],
+      ['🐢', 'Tartaruga'],
+      ['🐸', 'Sapo'],
+      ['🐙', 'Polvo'],
+      ['🦑', 'Lula'],
+      ['🦈', 'Tubarão'],
+      ['🐬', 'Golfinho'],
+      ['🐳', 'Baleia'],
+      ['🦀', 'Caranguejo'],
+      ['🦂', 'Escorpião'],
+      ['🕷️', 'Aranha'],
+      ['🐝', 'Abelha'],
+      ['🦋', 'Borboleta'],
+      ['🐌', 'Lesma'],
+      ['🐛', 'Lagarta'],
+      ['🦗', 'Gafanhoto'],
+      ['🪲', 'Besouro'],
+      ['🐾', 'Fera'],
+    ]),
+  },
+]
+
+/** Todos os avatares em uma lista plana (ordem das categorias). */
+export const AVATAR_OPTIONS: string[] = AVATAR_CATEGORIES.flatMap((c) =>
+  c.avatars.map((a) => a.icon),
+)
 
 export function newId(): string {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()

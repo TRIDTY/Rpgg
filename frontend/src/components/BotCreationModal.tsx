@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { AVATAR_OPTIONS } from '../domain/character'
+import { AvatarPicker } from './AvatarPicker'
 import { Modal } from './Modal'
 
 interface Props {
@@ -26,20 +26,7 @@ export function BotCreationModal({ onCreate, onClose }: Props) {
         </p>
         <div className="field">
           <span className="field__label">Avatar</span>
-          <div className="avatar-picker" role="radiogroup" aria-label="Avatar do bot">
-            {AVATAR_OPTIONS.map((a) => (
-              <button
-                type="button"
-                key={a}
-                role="radio"
-                aria-checked={avatar === a}
-                className={`avatar-picker__option ${avatar === a ? 'is-selected' : ''}`}
-                onClick={() => setAvatar(a)}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
+          <AvatarPicker value={avatar} onChange={setAvatar} ariaLabel="Avatar do bot" />
         </div>
         <label className="field">
           <span className="field__label">Nome *</span>

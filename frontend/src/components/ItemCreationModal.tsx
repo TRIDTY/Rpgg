@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { ItemRarity, NewItemInput } from '../types'
 import { ITEM_SPRITES, ITEM_SPRITE_CATEGORIES, RARITIES, RARITY_LABEL, isValidItemInput } from '../domain/itemForge'
+import { CategoryTabs } from './CategoryTabs'
 import { Modal } from './Modal'
 import './ItemCreationModal.css'
 
@@ -78,20 +79,12 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
 
         <div className="field">
           <span className="field__label">Sprite</span>
-          <div className="sprite-tabs" role="tablist" aria-label="Tipo de item">
-            {ITEM_SPRITE_CATEGORIES.map((c) => (
-              <button
-                type="button"
-                key={c.id}
-                role="tab"
-                aria-selected={c.id === category.id}
-                className={`sprite-tab ${c.id === category.id ? 'is-active' : ''}`}
-                onClick={() => setCategoryId(c.id)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
+          <CategoryTabs
+            tabs={ITEM_SPRITE_CATEGORIES}
+            activeId={category.id}
+            onChange={setCategoryId}
+            ariaLabel="Tipo de item"
+          />
           <div className="sprite-picker" role="listbox" aria-label={`Sprites: ${category.label}`}>
             {category.sprites.map((sprite) => (
               <button

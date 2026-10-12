@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { AttributeValue, PlayerRole } from '../types'
 import { AVATAR_OPTIONS, createCharacter, DEFAULT_ATTRIBUTES } from '../domain/character'
+import { AvatarPicker } from '../components/AvatarPicker'
 import { useAppStore } from '../store/appStore'
 import './screens.css'
 
@@ -62,20 +63,7 @@ export function CreateCharacterScreen() {
       <form className="form" onSubmit={onSubmit}>
         <div className="field">
           <span className="field__label">Avatar</span>
-          <div className="avatar-picker" role="radiogroup" aria-label="Avatar">
-            {AVATAR_OPTIONS.map((a) => (
-              <button
-                type="button"
-                key={a}
-                role="radio"
-                aria-checked={avatar === a}
-                className={`avatar-picker__option ${avatar === a ? 'is-selected' : ''}`}
-                onClick={() => setAvatar(a)}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
+          <AvatarPicker value={avatar} onChange={setAvatar} ariaLabel="Avatar" />
         </div>
 
         <label className="field">
