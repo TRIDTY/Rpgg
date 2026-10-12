@@ -7,5 +7,6 @@ export default defineConfig({
   base: './',
   build: {
     modulePreload: false,
+    assetsInlineLimit: 512 * 1024,
   },
 })

@@ -51,9 +51,11 @@
 }
 
 .home__logo {
-  font-size: 64px;
-  line-height: 1;
-  filter: drop-shadow(0 8px 20px rgba(255, 200, 80, 0.35));
+  display: block;
+  width: min(280px, 72vw);
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 24px rgba(255, 200, 80, 0.3));
 }
 
 .home__title {

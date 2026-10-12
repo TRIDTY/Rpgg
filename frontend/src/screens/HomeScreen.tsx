@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import { useRoomStore } from '../store/roomStore'
+import logo from '../assets/logo.webp'
 import './screens.css'
 
 export function HomeScreen() {
@@ -13,9 +14,8 @@ export function HomeScreen() {
   return (
     <div className="screen home">
       <div>
-        <div className="home__logo">🎒</div>
+        <img className="home__logo" src={logo} alt="RPGG" />
         <h1 className="home__title">Inventário RPG</h1>
-        <p className="screen__subtitle">Sua mesa, seu celular, sua rede Wi-Fi. Sem nuvem.</p>
       </div>
 
       {error && (
