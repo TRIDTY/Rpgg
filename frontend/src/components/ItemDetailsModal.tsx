@@ -8,6 +8,8 @@ interface Props {
   onClose: () => void
   /** Botões extras (ex.: Mestre pegando/descartando um item de bot). */
   actions?: ReactNode
+  /** Dono da mochila (ou Mestre em bot): equipa/desequipa o item. */
+  onToggleEquip?: (item: Item, equipped: boolean) => void
 }
 
 const RARITY_LABEL: Record<Item['rarity'], string> = {
@@ -19,7 +21,7 @@ const RARITY_LABEL: Record<Item['rarity'], string> = {
 }
 
 /** Inspeção de item (toque curto em slot ocupado): imagem em destaque, nome e descrição. */
-export function ItemDetailsModal({ item, onClose, actions }: Props) {
+export function ItemDetailsModal({ item, onClose, actions, onToggleEquip }: Props) {
   return (
     <Modal title="Item" onClose={onClose}>
       <div className="item-details">
@@ -29,6 +31,7 @@ export function ItemDetailsModal({ item, onClose, actions }: Props) {
         <h3 className="item-details__name">{item.name}</h3>
         <p className="item-details__meta">
           <span className={`item-details__rarity item-details__rarity--${item.rarity}`}>{RARITY_LABEL[item.rarity]}</span>
+          {item.equipped && <span className="item-details__equipped">⚔ Equipado</span>}
           {item.maxStack > 1 && (
             <span className="item-details__qty">
               x{item.quantity} <small>/ {item.maxStack}</small>
@@ -40,6 +43,15 @@ export function ItemDetailsModal({ item, onClose, actions }: Props) {
         </p>
       </div>
       <div className="btn-row">
+        {onToggleEquip && (
+          <button
+            type="button"
+            className={`btn ${item.equipped ? '' : 'btn--gold'}`}
+            onClick={() => onToggleEquip(item, !item.equipped)}
+          >
+            {item.equipped ? '⚔ Desequipar' : '⚔ Equipar'}
+          </button>
+        )}
         {actions}
         <button type="button" className="btn btn--primary" onClick={onClose}>
           Fechar

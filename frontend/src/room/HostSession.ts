@@ -13,7 +13,7 @@ import type {
 } from '../types'
 import { MAX_LEVEL, MIN_LEVEL } from '../types'
 import { createCharacter, newId, profileToActor } from '../domain/character'
-import { addItem, moveItem, placeItem, removeItem, takeItem } from '../domain/inventory'
+import { addItem, moveItem, placeItem, removeItem, setEquipped, takeItem, unequipped } from '../domain/inventory'
 import { forgeItem, isValidItemInput } from '../domain/itemForge'
 import type { ClientId, ServerAddress, ServerTransport } from './transport'
 
@@ -250,7 +250,20 @@ export class HostSession {
         }
         owner.profile.Inventory = change.slots
         this.inventoryUpdated(owner.profile.PlayerId, change.changed)
+        if (change.item.equipped) this.broadcastSession()
         console.log(`[host] ${member.profile.Name} descartou ${change.item.icon} ${change.item.name} x${change.item.quantity} de ${owner.profile.Name}`)
+        break
+      }
+      case 'SetEquipped': {
+        const owner = this.managedMember(member, command.ownerId ?? playerId)
+        if (!owner || typeof command.equipped !== 'boolean') return
+        const change = setEquipped(owner.profile.Inventory, command.slotIndex, command.itemId, command.equipped)
+        if (!change) return
+        owner.profile.Inventory = change.slots
+        owner.profile.UpdatedAt = new Date().toISOString()
+        this.inventoryUpdated(owner.profile.PlayerId, change.changed)
+        this.broadcastSession()
+        console.log(`[host] ${owner.profile.Name} ${command.equipped ? 'equipou' : 'desequipou'} ${change.item.icon} ${change.item.name}`)
         break
       }
       case 'TakeItem': {
@@ -258,7 +271,7 @@ export class HostSession {
         if (!owner || owner === member) return
         const taken = removeItem(owner.profile.Inventory, command.slotIndex, command.itemId)
         if (!taken) return
-        const added = addItem(member.profile.Inventory, taken.item)
+        const added = addItem(member.profile.Inventory, unequipped(taken.item))
         if (!added) {
           console.warn(`[host] inventário de ${member.profile.Name} cheio; não pegou o item de ${owner.profile.Name}`)
           return
@@ -267,6 +280,7 @@ export class HostSession {
         member.profile.Inventory = added.slots
         this.inventoryUpdated(owner.profile.PlayerId, taken.changed)
         this.inventoryUpdated(playerId, added.changed)
+        if (taken.item.equipped) this.broadcastSession()
         console.log(`[host] ${member.profile.Name} pegou ${taken.item.name} x${taken.item.quantity} de ${owner.profile.Name}`)
         break
       }
@@ -298,7 +312,7 @@ export class HostSession {
         if (!target || target === member) return
         const taken = takeItem(member.profile.Inventory, command.itemId)
         if (!taken) return
-        const added = addItem(target.profile.Inventory, taken.item)
+        const added = addItem(target.profile.Inventory, unequipped(taken.item))
         if (!added) {
           console.warn(`[host] inventário de ${target.profile.Name} cheio; transferência cancelada`)
           return
@@ -307,7 +321,8 @@ export class HostSession {
         target.profile.Inventory = added.slots
         this.inventoryUpdated(playerId, taken.changed)
         this.inventoryUpdated(command.targetPlayerId, added.changed)
-        this.sendTo(command.targetPlayerId, { type: 'ItemReceivedEvent', fromId: playerId, item: taken.item })
+        this.sendTo(command.targetPlayerId, { type: 'ItemReceivedEvent', fromId: playerId, item: unequipped(taken.item) })
+        if (taken.item.equipped) this.broadcastSession()
         console.log(`[host] ${member.profile.Name} -> ${target.profile.Name}: ${taken.item.name} x${taken.item.quantity}`)
         break
       }

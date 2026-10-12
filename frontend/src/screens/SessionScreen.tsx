@@ -6,7 +6,17 @@ import type { DragPayload, DropTarget } from '../dnd/DragDropController'
 import { selectActorById, selectItemById, useInventoryStore } from '../store/inventoryStore'
 import { useRoomStore } from '../store/roomStore'
 import { useAppStore } from '../store/appStore'
-import { CreateBot, CreateItem, DiscardItem, InitiateTrade, MoveItem, RemoveBot, SetLevel, TakeItem } from '../services/tradeService'
+import {
+  CreateBot,
+  CreateItem,
+  DiscardItem,
+  InitiateTrade,
+  MoveItem,
+  RemoveBot,
+  SetEquipped,
+  SetLevel,
+  TakeItem,
+} from '../services/tradeService'
 import { InventoryGrid } from '../components/InventoryGrid'
 import { SessionSidebar } from '../components/SessionSidebar'
 import { TradeModal } from '../components/TradeModal'
@@ -32,6 +42,8 @@ interface PendingDiscard {
 
 interface ItemDetails {
   item: Item
+  /** Slot da própria mochila: habilita equipar/desequipar. */
+  ownSlotIndex?: number
   /** Mochila de bot aberta pelo Mestre: habilita pegar/descartar. */
   bot?: { ownerId: PlayerId; slotIndex: number }
 }
@@ -73,7 +85,14 @@ export function SessionScreen() {
     [isGameMaster, self],
   )
 
-  const handleItemTap = useCallback((item: Item) => setDetails({ item }), [])
+  const handleItemTap = useCallback((item: Item, slotIndex: number) => setDetails({ item, ownSlotIndex: slotIndex }), [])
+
+  const toggleEquip = (item: Item, equipped: boolean) => {
+    if (!details) return
+    if (details.ownSlotIndex !== undefined) SetEquipped(details.ownSlotIndex, item.id, equipped)
+    else if (details.bot) SetEquipped(details.bot.slotIndex, item.id, equipped, details.bot.ownerId)
+    setDetails(null)
+  }
 
   const forgeItem = (input: NewItemInput) => {
     if (forgeTarget) CreateItem(forgeTarget.ownerId, forgeTarget.slotIndex, input)
@@ -207,6 +226,7 @@ export function SessionScreen() {
         <ItemDetailsModal
           item={details.item}
           onClose={() => setDetails(null)}
+          onToggleEquip={details.ownSlotIndex !== undefined || details.bot ? toggleEquip : undefined}
           actions={
             details.bot && (
               <>

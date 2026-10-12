@@ -22,6 +22,12 @@ export function DiscardItem(slotIndex: number, itemId: ItemId, ownerId?: PlayerI
   useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex, itemId, ownerId })
 }
 
+/** Equipa/desequipa um item da própria mochila (ou, se Mestre, da de um bot); o Host propaga `Actor.equipped` à sala. */
+export function SetEquipped(slotIndex: number, itemId: ItemId, equipped: boolean, ownerId?: PlayerId) {
+  console.log(`SetEquipped(${slotIndex}, ${itemId}, ${equipped}${ownerId ? `, ${ownerId}` : ''})`)
+  useRoomStore.getState().sendCommand({ type: 'SetEquipped', slotIndex, itemId, equipped, ownerId })
+}
+
 /** Mestre retira um item da mochila de um bot para a própria mochila. */
 export function TakeItem(ownerId: PlayerId, slotIndex: number, itemId: ItemId) {
   console.log(`TakeItem(${ownerId}, ${slotIndex}, ${itemId})`)

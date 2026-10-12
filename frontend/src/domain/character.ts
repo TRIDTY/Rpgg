@@ -66,6 +66,6 @@ export function profileToActor(profile: CharacterProfile, online: boolean): Acto
     online,
     level: profile.Level,
     title: profile.Title,
-    equipped: [],
+    equipped: profile.Inventory.flatMap((s) => (s.item?.equipped ? [s.item] : [])),
   }
 }

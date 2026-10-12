@@ -61,7 +61,7 @@ function PeerSlot({
       {slot.item ? (
         <button
           type="button"
-          className={`item-tile item-tile--${slot.item.rarity} peer-inv__item`}
+          className={`item-tile item-tile--${slot.item.rarity} ${slot.item.equipped ? 'item-tile--equipped' : ''} peer-inv__item`}
           title={slot.item.name}
           onClick={() => slot.item && onTap?.(slot.item)}
         >

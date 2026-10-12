@@ -11,6 +11,8 @@ export interface Item {
   maxStack: number
   rarity: ItemRarity
   description?: string
+  /** Item em uso pelo personagem; visível para toda a sala via `Actor.equipped`. */
+  equipped?: boolean
 }
 
 export interface InventorySlot {
@@ -204,6 +206,15 @@ export interface SetLevelCommand {
   level: number
 }
 
+/** Jogador equipa/desequipa um item da própria mochila (Mestre também em bots). */
+export interface SetEquippedCommand {
+  type: 'SetEquipped'
+  ownerId?: PlayerId
+  slotIndex: number
+  itemId: ItemId
+  equipped: boolean
+}
+
 export interface TakeItemCommand {
   type: 'TakeItem'
   ownerId: PlayerId
@@ -232,6 +243,7 @@ export type ClientCommand =
   | CreateItemCommand
   | DiscardItemCommand
   | TakeItemCommand
+  | SetEquippedCommand
   | CreateBotCommand
   | RemoveBotCommand
   | SetLevelCommand

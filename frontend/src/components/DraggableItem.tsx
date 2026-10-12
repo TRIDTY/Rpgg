@@ -28,6 +28,7 @@ export function DraggableItem({ item, slotIndex, onTap }: Props) {
     'draggable-item',
     'item-tile',
     `item-tile--${item.rarity}`,
+    item.equipped && 'item-tile--equipped',
     isPressing && 'draggable-item--pressing',
     isDragging && 'draggable-item--dragging',
   ]

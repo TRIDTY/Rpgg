@@ -87,6 +87,24 @@ export function addItem(slots: InventorySlot[], item: Item): InventoryChange | n
   return { slots: next, changed }
 }
 
+/** Marca/desmarca o item de um slot como equipado. Null se o slot não tem esse item ou nada muda. */
+export function setEquipped(
+  slots: InventorySlot[],
+  slotIndex: number,
+  itemId: ItemId,
+  equipped: boolean,
+): (InventoryChange & { item: Item }) | null {
+  const next = clone(slots)
+  const slot = next[slotIndex]
+  if (!slot?.item || slot.item.id !== itemId) return null
+  if (Boolean(slot.item.equipped) === equipped) return null
+  slot.item = equipped ? { ...slot.item, equipped: true } : { ...slot.item, equipped: undefined }
+  return { slots: next, changed: [slot], item: slot.item }
+}
+
+/** Cópia do item para outra mochila: o status "equipado" não viaja junto. */
+export const unequipped = (item: Item): Item => (item.equipped ? { ...item, equipped: undefined } : item)
+
 /** Coloca um item em um slot específico, apenas se ele estiver vazio. */
 export function placeItem(slots: InventorySlot[], slotIndex: number, item: Item): InventoryChange | null {
   const next = clone(slots)

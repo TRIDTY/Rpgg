@@ -99,3 +99,13 @@
   color: rgba(255, 255, 255, 0.45);
   font-style: italic;
 }
+
+.item-details__equipped {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 200, 80, 0.18);
+  border: 1px solid rgba(255, 200, 80, 0.5);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+}
