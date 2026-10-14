@@ -179,3 +179,9 @@
   outline: none;
   border-color: var(--gold);
 }
+
+.inspect__visibility {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}

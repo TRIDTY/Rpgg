@@ -14,6 +14,8 @@ interface Props {
   onSetLevel?: (actor: Actor, level: number) => void
   /** Ferramenta do Mestre: apaga um bot da sala (com a mochila dele). */
   onRemoveBot?: (actor: Actor) => void
+  /** Ferramenta do Mestre: oculta/revela o bot para os jogadores. */
+  onSetBotHidden?: (actor: Actor, hidden: boolean) => void
 }
 
 const ROLE_LABEL: Record<Actor['role'], string> = {
@@ -23,7 +25,7 @@ const ROLE_LABEL: Record<Actor['role'], string> = {
   bot: 'Bot do Mestre',
 }
 
-export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel, onRemoveBot }: Props) {
+export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel, onRemoveBot, onSetBotHidden }: Props) {
   const canSeeEquipment = actor.role !== 'master'
 
   return (
@@ -61,6 +63,17 @@ export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel
           )
         ) : (
           <p className="inspect__empty">O Mestre não expõe equipamentos.</p>
+        )}
+
+        {actor.role === 'bot' && onSetBotHidden && (
+          <div className="inspect__visibility">
+            <p className="inspect__empty">
+              {actor.hidden ? '🙈 Oculto: os jogadores não veem este bot.' : '👁️ Visível para todos os jogadores.'}
+            </p>
+            <button type="button" className="btn" onClick={() => onSetBotHidden(actor, !actor.hidden)}>
+              {actor.hidden ? '👁️ Mostrar aos jogadores' : '🙈 Ocultar dos jogadores'}
+            </button>
+          </div>
         )}
 
         {(actor.role === 'player' || actor.role === 'bot') && onOpenInventory && (

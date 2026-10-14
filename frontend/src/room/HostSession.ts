@@ -80,8 +80,12 @@ export class HostSession {
   }
 
   /** Só quem está conectado agora aparece para os membros; quem saiu some da sidebar. */
-  actors(): Actor[] {
-    return this.onlineMembers().map((m) => profileToActor(m.profile, true))
+  /** Atores como `viewer` os enxerga: bots ocultos só aparecem para Mestres. */
+  actors(viewer?: SessionMember): Actor[] {
+    const seesHidden = viewer !== undefined && isGameMaster(viewer)
+    return this.onlineMembers()
+      .filter((m) => seesHidden || !m.hidden)
+      .map((m) => (m.hidden ? { ...profileToActor(m.profile, true), hidden: true } : profileToActor(m.profile, true)))
   }
 
   private onlineMembers(): SessionMember[] {
@@ -215,7 +219,7 @@ export class HostSession {
       type: 'JoinAccepted',
       playerId,
       roomName: this.session.name,
-      actors: this.actors(),
+      actors: this.actors(member),
       inventory: member.profile.Inventory,
     }
     if (isGameMaster(member)) {
@@ -292,9 +296,19 @@ export class HostSession {
         const name = typeof command.name === 'string' ? command.name.trim() : ''
         if (!name || typeof command.avatar !== 'string' || !command.avatar) return
         const bot = this.admit(createCharacter({ name, role: 'Bot', avatar: command.avatar, attributes: {} }))
+        bot.hidden = command.hidden === true
         this.broadcastSession()
         this.notifyGameMasters(bot.profile.PlayerId, bot.profile.Inventory)
         console.log(`[host] ${member.profile.Name} criou o bot ${bot.profile.Avatar} ${name} (${bot.profile.PlayerId})`)
+        break
+      }
+      case 'SetBotHidden': {
+        if (!isGameMaster(member) || typeof command.hidden !== 'boolean') return
+        const bot = this.session.members[command.botId]
+        if (!bot || !isBot(bot)) return
+        bot.hidden = command.hidden
+        this.broadcastSession()
+        console.log(`[host] ${member.profile.Name} ${command.hidden ? 'ocultou' : 'revelou'} o bot ${bot.profile.Name}`)
         break
       }
       case 'RemoveBot': {
@@ -310,6 +324,7 @@ export class HostSession {
       case 'InitiateTrade': {
         const target = this.session.members[command.targetPlayerId]
         if (!target || target === member) return
+        if (target.hidden && !isGameMaster(member)) return
         const taken = takeItem(member.profile.Inventory, command.itemId)
         if (!taken) return
         const added = addItem(target.profile.Inventory, unequipped(taken.item))
@@ -425,8 +440,12 @@ export class HostSession {
     this.transport.broadcast(JSON.stringify(event))
   }
 
+  /** Cada membro recebe a lista de atores que lhe cabe ver (bots ocultos só para Mestres). */
   private broadcastSession() {
-    this.broadcast({ type: 'SessionUpdatedEvent', roomName: this.session.name, actors: this.actors() })
+    for (const m of this.onlineMembers()) {
+      if (isBot(m)) continue
+      this.sendTo(m.profile.PlayerId, { type: 'SessionUpdatedEvent', roomName: this.session.name, actors: this.actors(m) })
+    }
   }
 
   private changed() {

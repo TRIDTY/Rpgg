@@ -39,6 +39,8 @@ export interface Actor {
   level?: number
   title?: string
   equipped: Item[]
+  /** Bot oculto pelo Mestre: só chega aos Mestres; jogadores nem o recebem. */
+  hidden?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +92,8 @@ export interface SessionMember {
   profile: CharacterProfile
   online: boolean
   joinedAt: string
+  /** Só para bots: invisível aos jogadores até o Mestre revelar. */
+  hidden?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +233,14 @@ export interface CreateBotCommand {
   type: 'CreateBot'
   name: string
   avatar: string
+  hidden?: boolean
+}
+
+/** Mestre oculta/revela um bot para os jogadores, a qualquer momento. */
+export interface SetBotHiddenCommand {
+  type: 'SetBotHidden'
+  botId: PlayerId
+  hidden: boolean
 }
 
 export interface RemoveBotCommand {
@@ -248,5 +260,6 @@ export type ClientCommand =
   | TakeItemCommand
   | SetEquippedCommand
   | CreateBotCommand
+  | SetBotHiddenCommand
   | RemoveBotCommand
   | SetLevelCommand

@@ -27,6 +27,7 @@ export const PlayerAvatarBubble = memo(function PlayerAvatarBubble({ actor, onTa
     'avatar-bubble',
     `avatar-bubble--${actor.role}`,
     actor.online ? 'avatar-bubble--online' : 'avatar-bubble--offline',
+    actor.hidden && 'avatar-bubble--hidden',
     isDragActive && 'avatar-bubble--droppable',
     isOver && 'avatar-bubble--over',
   ]
@@ -38,12 +39,17 @@ export const PlayerAvatarBubble = memo(function PlayerAvatarBubble({ actor, onTa
       type="button"
       className={className}
       onClick={() => onTap(actor)}
-      aria-label={`${actor.name}, ${ROLE_LABEL[actor.role]}, ${actor.online ? 'online' : 'offline'}`}
+      aria-label={`${actor.name}, ${ROLE_LABEL[actor.role]}${actor.hidden ? ' oculto' : ''}, ${actor.online ? 'online' : 'offline'}`}
       {...attributes}
     >
       <span className="avatar-bubble__ring">
         <IconView className="avatar-bubble__face" icon={actor.avatar} />
         <span className="avatar-bubble__status" aria-hidden />
+        {actor.hidden && (
+          <span className="avatar-bubble__hidden" aria-hidden>
+            🙈
+          </span>
+        )}
       </span>
       <span className="avatar-bubble__name">{actor.name}</span>
     </button>

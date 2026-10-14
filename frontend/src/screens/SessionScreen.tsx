@@ -14,6 +14,7 @@ import {
   InitiateTrade,
   MoveItem,
   RemoveBot,
+  SetBotHidden,
   SetEquipped,
   SetLevel,
   TakeItem,
@@ -149,8 +150,8 @@ export function SessionScreen() {
     setDetails(null)
   }
 
-  const createBot = (name: string, avatar: string) => {
-    CreateBot(name, avatar)
+  const createBot = (name: string, avatar: string, hidden: boolean) => {
+    CreateBot(name, avatar, hidden)
     setCreatingBot(false)
   }
 
@@ -250,6 +251,7 @@ export function SessionScreen() {
           actor={inspecting}
           onClose={() => setInspectingId(null)}
           onRemoveBot={isGameMaster ? removeBot : undefined}
+          onSetBotHidden={isGameMaster ? (actor, hidden) => SetBotHidden(actor.id, hidden) : undefined}
           onSetLevel={isGameMaster ? (actor, level) => SetLevel(actor.id, level) : undefined}
           onOpenInventory={
             isGameMaster

@@ -123,3 +123,26 @@
       0 0 0 8px rgba(120, 255, 170, 0);
   }
 }
+
+.avatar-bubble--hidden .avatar-bubble__ring {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.avatar-bubble--hidden .avatar-bubble__name {
+  opacity: 0.6;
+}
+
+.avatar-bubble__hidden {
+  position: absolute;
+  left: -4px;
+  bottom: -4px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  border-radius: 50%;
+  background: #1a1630;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}

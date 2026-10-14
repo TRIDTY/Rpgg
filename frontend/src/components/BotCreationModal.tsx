@@ -3,7 +3,7 @@ import { AvatarPicker } from './AvatarPicker'
 import { Modal } from './Modal'
 
 interface Props {
-  onCreate: (name: string, avatar: string) => void
+  onCreate: (name: string, avatar: string, hidden: boolean) => void
   onClose: () => void
 }
 
@@ -11,11 +11,12 @@ interface Props {
 export function BotCreationModal({ onCreate, onClose }: Props) {
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('🤖')
+  const [hidden, setHidden] = useState(false)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
-    onCreate(name.trim(), avatar)
+    onCreate(name.trim(), avatar, hidden)
   }
 
   return (
@@ -39,6 +40,10 @@ export function BotCreationModal({ onCreate, onClose }: Props) {
             required
             autoFocus
           />
+        </label>
+        <label className="checkbox">
+          <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />
+          <span>🙈 Oculto para os jogadores (você pode revelar depois)</span>
         </label>
         <div className="btn-row">
           <button type="button" className="btn" onClick={onClose}>

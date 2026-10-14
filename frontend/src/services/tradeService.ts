@@ -35,9 +35,15 @@ export function TakeItem(ownerId: PlayerId, slotIndex: number, itemId: ItemId) {
 }
 
 /** Mestre cria um bot (NPC/baú/mercador) na sala; a mochila dele fica sob controle total do Mestre. */
-export function CreateBot(name: string, avatar: string) {
-  console.log(`CreateBot(${name})`)
-  useRoomStore.getState().sendCommand({ type: 'CreateBot', name, avatar })
+export function CreateBot(name: string, avatar: string, hidden = false) {
+  console.log(`CreateBot(${name}, hidden=${hidden})`)
+  useRoomStore.getState().sendCommand({ type: 'CreateBot', name, avatar, hidden })
+}
+
+/** Mestre oculta ou revela um bot para os jogadores; o Host reenvia a lista de atores a cada um. */
+export function SetBotHidden(botId: PlayerId, hidden: boolean) {
+  console.log(`SetBotHidden(${botId}, ${hidden})`)
+  useRoomStore.getState().sendCommand({ type: 'SetBotHidden', botId, hidden })
 }
 
 export function RemoveBot(botId: PlayerId) {
