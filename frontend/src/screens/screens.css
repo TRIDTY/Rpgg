@@ -128,6 +128,19 @@
   margin-top: 3px;
 }
 
+.home__secondary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.home__icons {
+  width: 56px;
+  font-size: 22px;
+  padding: 0;
+}
+
 .home__join {
   align-self: center;
 }

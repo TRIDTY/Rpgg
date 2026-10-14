@@ -1,4 +1,5 @@
 import type { Actor, Item } from '../types'
+import { IconView } from './IconView'
 import { Modal } from './Modal'
 import './TradeModal.css'
 
@@ -15,7 +16,7 @@ export function TradeModal({ item, target, onConfirm, onCancel }: Props) {
     <Modal title={isMerchant ? 'Iniciar negociação' : 'Enviar item'} onClose={onCancel}>
       <div className="trade">
         <div className="trade__item">
-          <span className={`trade__icon trade__icon--${item.rarity}`}>{item.icon}</span>
+          <IconView className={`trade__icon trade__icon--${item.rarity}`} icon={item.icon} />
           <span className="trade__label">
             {item.name}
             {item.quantity > 1 && <small> x{item.quantity}</small>}
@@ -23,7 +24,7 @@ export function TradeModal({ item, target, onConfirm, onCancel }: Props) {
         </div>
         <span className="trade__arrow">➜</span>
         <div className="trade__target">
-          <span className="trade__avatar">{target.avatar}</span>
+          <IconView className="trade__avatar" icon={target.avatar} />
           <span className="trade__label">{target.name}</span>
         </div>
       </div>

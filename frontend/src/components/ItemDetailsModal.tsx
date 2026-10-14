@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { IconView } from './IconView'
 import type { Item } from '../types'
 import { Modal } from './Modal'
 import './ItemDetailsModal.css'
@@ -26,7 +27,7 @@ export function ItemDetailsModal({ item, onClose, actions, onToggleEquip }: Prop
     <Modal title="Item" onClose={onClose}>
       <div className="item-details">
         <span className={`item-details__icon item-details__icon--${item.rarity}`} aria-hidden>
-          {item.icon}
+          <IconView icon={item.icon} />
         </span>
         <h3 className="item-details__name">{item.name}</h3>
         <p className="item-details__meta">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { IconView } from '../components/IconView'
 import QRCode from 'qrcode'
 import { encodeInvite, generateRoomPassword } from '../room/invite'
 import { DEFAULT_ROOM_PORT, formatAddress, LOOPBACK_HOST } from '../room/transport'
@@ -162,7 +163,7 @@ function HostLobby() {
         <div className="member-list" style={{ marginTop: 8 }}>
           {members.map((m) => (
             <div className="member" key={m.id}>
-              <span className="member__avatar">{m.avatar}</span>
+              <IconView className="member__avatar" icon={m.avatar} />
               <span>
                 <span className="member__name">{m.name}</span>
                 <br />

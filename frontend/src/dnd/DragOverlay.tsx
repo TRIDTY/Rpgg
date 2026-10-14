@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { IconView } from '../components/IconView'
 import { useDragDropController, useDragState } from './hooks'
 import './DragOverlay.css'
 
@@ -27,7 +28,7 @@ export function DragOverlay() {
       style={{ transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)` }}
       aria-hidden
     >
-      <span className="drag-overlay__icon">{payload.icon}</span>
+      <IconView className="drag-overlay__icon" icon={payload.icon} />
       {payload.quantity > 1 && <span className="drag-overlay__qty">{payload.quantity}</span>}
     </div>
   )

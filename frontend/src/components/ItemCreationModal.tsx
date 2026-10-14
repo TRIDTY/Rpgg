@@ -2,8 +2,12 @@ import { useState, type FormEvent } from 'react'
 import type { ItemRarity, NewItemInput } from '../types'
 import { ITEM_SPRITES, ITEM_SPRITE_CATEGORIES, RARITIES, RARITY_LABEL, isValidItemInput } from '../domain/itemForge'
 import { CategoryTabs } from './CategoryTabs'
+import { IconView } from './IconView'
+import { useCustomIcons } from '../store/iconStore'
 import { Modal } from './Modal'
 import './ItemCreationModal.css'
+
+const CUSTOM_TAB = { id: 'custom', label: '📷 Personalizados' }
 
 interface Props {
   /** Nome de quem receberá o item (o próprio Mestre ou um jogador). */
@@ -18,7 +22,9 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState(ITEM_SPRITES[0].icon)
   const [categoryId, setCategoryId] = useState(ITEM_SPRITE_CATEGORIES[0].id)
-  const category = ITEM_SPRITE_CATEGORIES.find((c) => c.id === categoryId) ?? ITEM_SPRITE_CATEGORIES[0]
+  const customIcons = useCustomIcons('item')
+  const category = ITEM_SPRITE_CATEGORIES.find((c) => c.id === categoryId)
+  const sprites = category?.sprites ?? customIcons.map((i) => ({ icon: i.dataUrl, label: 'Ícone personalizado' }))
   const [rarity, setRarity] = useState<ItemRarity>('common')
   const [quantityText, setQuantityText] = useState('1')
   const quantity = Number.parseInt(quantityText, 10)
@@ -47,7 +53,7 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
         </p>
 
         <div className={`forge__preview item-tile item-tile--${rarity}`} aria-hidden>
-          <span className="item-tile__icon">{icon}</span>
+          <IconView className="item-tile__icon" icon={icon} />
           {quantity > 1 && <span className="item-tile__qty">{quantity}</span>}
           <span className="item-tile__name">{name.trim() || 'Novo item'}</span>
         </div>
@@ -80,13 +86,18 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
         <div className="field">
           <span className="field__label">Sprite</span>
           <CategoryTabs
-            tabs={ITEM_SPRITE_CATEGORIES}
-            activeId={category.id}
+            tabs={[...ITEM_SPRITE_CATEGORIES, CUSTOM_TAB]}
+            activeId={category?.id ?? CUSTOM_TAB.id}
             onChange={setCategoryId}
             ariaLabel="Tipo de item"
           />
-          <div className="sprite-picker" role="listbox" aria-label={`Sprites: ${category.label}`}>
-            {category.sprites.map((sprite) => (
+          {sprites.length === 0 && (
+            <p className="picker-empty">
+              Nenhum ícone personalizado ainda. Suba suas imagens em "📷 Ícones personalizados" na tela inicial.
+            </p>
+          )}
+          <div className="sprite-picker" role="listbox" aria-label={`Sprites: ${category?.label ?? CUSTOM_TAB.label}`}>
+            {sprites.map((sprite) => (
               <button
                 type="button"
                 key={sprite.icon}
@@ -96,7 +107,7 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
                 className={`sprite-picker__option ${icon === sprite.icon ? 'is-selected' : ''}`}
                 onClick={() => setIcon(sprite.icon)}
               >
-                {sprite.icon}
+                <IconView icon={sprite.icon} />
               </button>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IconView } from './IconView'
 import type { Actor } from '../types'
 import { MAX_LEVEL, MIN_LEVEL } from '../types'
 import { Modal } from './Modal'
@@ -29,7 +30,7 @@ export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel
     <Modal title={actor.name} onClose={onClose} variant="sheet">
       <div className="inspect">
         <div className="inspect__hero">
-          <span className={`inspect__avatar inspect__avatar--${actor.role}`}>{actor.avatar}</span>
+          <IconView className={`inspect__avatar inspect__avatar--${actor.role}`} icon={actor.avatar} />
           <div className="inspect__meta">
             <span className="inspect__role">{ROLE_LABEL[actor.role]}</span>
             {actor.title && <span className="inspect__title">{actor.title}</span>}
@@ -50,7 +51,7 @@ export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel
             <ul className="inspect__equipped">
               {actor.equipped.map((item) => (
                 <li key={item.id} className={`inspect__equip inspect__equip--${item.rarity}`}>
-                  <span className="inspect__equip-icon">{item.icon}</span>
+                  <IconView className="inspect__equip-icon" icon={item.icon} />
                   <span className="inspect__equip-name">{item.name}</span>
                 </li>
               ))}

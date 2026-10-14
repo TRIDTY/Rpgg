@@ -6,7 +6,15 @@ import { characterRepository, settingsRepository } from '../storage/repositories
  * Fluxo: home -> host-room | join-room (rede) -> select-profile (ficha) -> session.
  * `create-character` é um desvio que volta para `returnTo`.
  */
-export type Screen = 'home' | 'create-character' | 'host-room' | 'join-room' | 'select-profile' | 'session'
+export type Screen =
+  | 'home'
+  | 'create-character'
+  | 'host-room'
+  | 'join-room'
+  | 'select-profile'
+  | 'session'
+  | 'custom-icons'
+  | 'crop-icon'
 
 interface AppState {
   screen: Screen

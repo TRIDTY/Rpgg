@@ -89,3 +89,37 @@ export class SettingsRepository {
 export const characterRepository = new CharacterRepository(documentStore)
 export const sessionRepository = new SessionRepository(documentStore)
 export const settingsRepository = new SettingsRepository(documentStore)
+
+const ICONS = 'icons'
+
+export type CustomIconKind = 'character' | 'item'
+
+/** Imagem recortada pelo usuário (data URL pequena) usável como avatar ou sprite de item. */
+export interface CustomIcon {
+  id: string
+  kind: CustomIconKind
+  dataUrl: string
+  createdAt: string
+}
+
+export class IconRepository {
+  private readonly store: DocumentStore
+
+  constructor(store: DocumentStore) {
+    this.store = store
+  }
+
+  list() {
+    return this.store.list<CustomIcon>(ICONS)
+  }
+
+  save(icon: CustomIcon) {
+    return this.store.write(ICONS, icon.id, icon)
+  }
+
+  remove(id: string) {
+    return this.store.remove(ICONS, id)
+  }
+}
+
+export const iconRepository = new IconRepository(documentStore)

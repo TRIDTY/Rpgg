@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { IconView } from './IconView'
 import type { Actor } from '../types'
 import { useDropTarget } from '../dnd/hooks'
 import './PlayerAvatarBubble.css'
@@ -41,7 +42,7 @@ export const PlayerAvatarBubble = memo(function PlayerAvatarBubble({ actor, onTa
       {...attributes}
     >
       <span className="avatar-bubble__ring">
-        <span className="avatar-bubble__face">{actor.avatar}</span>
+        <IconView className="avatar-bubble__face" icon={actor.avatar} />
         <span className="avatar-bubble__status" aria-hidden />
       </span>
       <span className="avatar-bubble__name">{actor.name}</span>

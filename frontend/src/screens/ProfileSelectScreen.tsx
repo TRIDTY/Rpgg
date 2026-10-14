@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IconView } from '../components/IconView'
 import type { CharacterProfile, PlayerId } from '../types'
 import { useAppStore } from '../store/appStore'
 import { useRoomStore } from '../store/roomStore'
@@ -75,7 +76,7 @@ export function ProfileSelectScreen() {
               if (confirm(`Apagar a ficha de ${c.Name}?`)) void deleteCharacter(c.PlayerId)
             }}
           >
-            <span className="character-chip__avatar">{c.Avatar}</span>
+            <IconView className="character-chip__avatar" icon={c.Avatar} />
             <span>
               <span className="character-chip__name">{c.Name}</span>
               <br />

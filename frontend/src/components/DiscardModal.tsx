@@ -1,4 +1,5 @@
 import type { Item } from '../types'
+import { IconView } from './IconView'
 import { Modal } from './Modal'
 import './DiscardModal.css'
 
@@ -13,7 +14,7 @@ export function DiscardModal({ item, onConfirm, onCancel }: Props) {
   return (
     <Modal title="Descartar item" onClose={onCancel}>
       <div className="discard">
-        <span className={`discard__icon discard__icon--${item.rarity}`}>{item.icon}</span>
+        <IconView className={`discard__icon discard__icon--${item.rarity}`} icon={item.icon} />
         <span className="discard__trash">🗑️</span>
       </div>
       <p className="discard__question">

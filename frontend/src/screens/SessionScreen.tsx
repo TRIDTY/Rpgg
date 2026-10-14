@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { IconView } from '../components/IconView'
 import type { Actor, ActorId, Item, ItemId, NewItemInput, PlayerId } from '../types'
 import { DragDropProvider } from '../dnd/DragDropProvider'
 import { DragOverlay } from '../dnd/DragOverlay'
@@ -163,7 +164,7 @@ export function SessionScreen() {
     <DragDropProvider onDrop={handleDrop}>
       <main className="app app--with-bar">
         <div className="session-bar app__bar">
-          <span className="session-bar__avatar">{self?.avatar}</span>
+          <IconView className="session-bar__avatar" icon={self?.avatar ?? ""} />
           <span className="session-bar__text">
             <span className="session-bar__name">
               {self?.name} <small>· {isGameMaster ? 'Mestre' : 'Jogador'}</small>

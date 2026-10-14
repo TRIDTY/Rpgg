@@ -1,4 +1,5 @@
 import type { Item } from '../types'
+import { IconView } from './IconView'
 import './ItemTile.css'
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 export function ItemTile({ item }: Props) {
   return (
     <>
-      <span className="item-tile__icon">{item.icon}</span>
+      <IconView className="item-tile__icon" icon={item.icon} />
       {item.quantity > 1 && <span className="item-tile__qty">{item.quantity}</span>}
       <span className="item-tile__name">{item.name}</span>
       {item.equipped && (

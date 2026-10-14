@@ -1,4 +1,5 @@
 import { useAppStore } from '../store/appStore'
+import { IconView } from '../components/IconView'
 import { useRoomStore } from '../store/roomStore'
 import logo from '../assets/logo.webp'
 import './screens.css'
@@ -44,9 +45,20 @@ export function HomeScreen() {
         </button>
       </div>
 
-      <button type="button" className="btn btn--ghost home__join" onClick={() => createCharacter('home')}>
-        🧝 Criar Perfil de Personagem
-      </button>
+      <div className="home__secondary">
+        <button type="button" className="btn btn--ghost home__join" onClick={() => createCharacter('home')}>
+          🧝 Criar Perfil de Personagem
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost home__icons"
+          onClick={() => navigate('custom-icons')}
+          aria-label="Ícones personalizados"
+          title="Ícones personalizados"
+        >
+          📷
+        </button>
+      </div>
 
       {characters.length > 0 && (
         <div className="character-list">
@@ -60,7 +72,7 @@ export function HomeScreen() {
                 if (confirm(`Apagar a ficha de ${c.Name}?`)) void deleteCharacter(c.PlayerId)
               }}
             >
-              <span className="character-chip__avatar">{c.Avatar}</span>
+              <IconView className="character-chip__avatar" icon={c.Avatar} />
               <span>
                 <span className="character-chip__name">{c.Name}</span>
                 <br />

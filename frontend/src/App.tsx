@@ -7,6 +7,9 @@ import { HostRoomScreen } from './screens/HostRoomScreen'
 import { JoinRoomScreen } from './screens/JoinRoomScreen'
 import { ProfileSelectScreen } from './screens/ProfileSelectScreen'
 import { SessionScreen } from './screens/SessionScreen'
+import { CustomIconsScreen } from './screens/CustomIconsScreen'
+import { IconCropScreen } from './screens/IconCropScreen'
+import { useIconStore } from './store/iconStore'
 
 export default function App() {
   const screen = useAppStore((s) => s.screen)
@@ -15,10 +18,12 @@ export default function App() {
   const mode = useRoomStore((s) => s.mode)
   const self = useRoomStore((s) => s.self)
   const navigate = useAppStore((s) => s.navigate)
+  const loadIcons = useIconStore((s) => s.load)
 
   useEffect(() => {
     void load()
-  }, [load])
+    void loadIcons()
+  }, [load, loadIcons])
 
   // A sessão exige rede + ficha; a seleção de ficha exige rede. Se a conexão cair, volta para a Home.
   useEffect(() => {
@@ -39,6 +44,10 @@ export default function App() {
       return mode === 'idle' ? null : <ProfileSelectScreen />
     case 'session':
       return mode === 'idle' || !self ? null : <SessionScreen />
+    case 'custom-icons':
+      return <CustomIconsScreen />
+    case 'crop-icon':
+      return <IconCropScreen />
     case 'home':
     default:
       return <HomeScreen />
