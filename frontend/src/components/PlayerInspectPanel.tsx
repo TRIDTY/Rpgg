@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IconView } from './IconView'
 import type { Actor } from '../types'
-import { MAX_LEVEL, MIN_LEVEL } from '../types'
+import { MAX_INVENTORY_SLOTS, MAX_LEVEL, MIN_LEVEL } from '../types'
 import { Modal } from './Modal'
 import './PlayerInspectPanel.css'
 
@@ -16,6 +16,8 @@ interface Props {
   onRemoveBot?: (actor: Actor) => void
   /** Ferramenta do Mestre: oculta/revela o bot para os jogadores. */
   onSetBotHidden?: (actor: Actor, hidden: boolean) => void
+  /** Ferramenta do Mestre: limita/amplia a mochila de jogadores e bots. */
+  onSetSlots?: (actor: Actor, slots: number) => void
 }
 
 const ROLE_LABEL: Record<Actor['role'], string> = {
@@ -25,7 +27,7 @@ const ROLE_LABEL: Record<Actor['role'], string> = {
   bot: 'Bot do Mestre',
 }
 
-export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel, onRemoveBot, onSetBotHidden }: Props) {
+export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel, onRemoveBot, onSetBotHidden, onSetSlots }: Props) {
   const canSeeEquipment = actor.role !== 'master'
 
   return (
@@ -44,7 +46,26 @@ export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel
         </div>
 
         {onSetLevel && actor.level !== undefined && (
-          <LevelEditor key={actor.level} level={actor.level} onChange={(level) => onSetLevel(actor, level)} />
+          <NumberEditor
+            key={`level-${actor.level}`}
+            label="Nível (Mestre)"
+            name="Nível"
+            value={actor.level}
+            min={MIN_LEVEL}
+            max={MAX_LEVEL}
+            onChange={(level) => onSetLevel(actor, level)}
+          />
+        )}
+        {onSetSlots && actor.role !== 'master' && actor.slots !== undefined && (
+          <NumberEditor
+            key={`slots-${actor.slots}`}
+            label="Slots da mochila (Mestre)"
+            name="Slots da mochila"
+            value={actor.slots}
+            min={1}
+            max={MAX_INVENTORY_SLOTS}
+            onChange={(slots) => onSetSlots(actor, slots)}
+          />
         )}
 
         <h3 className="inspect__section">Equipado</h3>
@@ -93,56 +114,52 @@ export function PlayerInspectPanel({ actor, onClose, onOpenInventory, onSetLevel
   )
 }
 
-const clampLevel = (value: number) => Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, Math.trunc(value)))
+interface NumberEditorProps {
+  label: string
+  name: string
+  value: number
+  min: number
+  max: number
+  onChange: (value: number) => void
+}
 
 /** Controle do Mestre: −/+ aplicam na hora; o campo numérico aplica ao sair/Enter. */
-function LevelEditor({ level, onChange }: { level: number; onChange: (level: number) => void }) {
-  const [draft, setDraft] = useState(String(level))
+function NumberEditor({ label, name, value, min, max, onChange }: NumberEditorProps) {
+  const [draft, setDraft] = useState(String(value))
+  const clamp = (v: number) => Math.min(max, Math.max(min, Math.trunc(v)))
 
-  const commit = (value: number) => {
-    if (!Number.isFinite(value)) {
-      setDraft(String(level))
+  const commit = (v: number) => {
+    if (!Number.isFinite(v)) {
+      setDraft(String(value))
       return
     }
-    const next = clampLevel(value)
+    const next = clamp(v)
     setDraft(String(next))
-    if (next !== level) onChange(next)
+    if (next !== value) onChange(next)
   }
 
   return (
-    <div className="level-editor" role="group" aria-label="Nível do personagem">
-      <span className="inspect__section level-editor__label">Nível (Mestre)</span>
+    <div className="level-editor" role="group" aria-label={name}>
+      <span className="inspect__section level-editor__label">{label}</span>
       <div className="level-editor__controls">
-        <button
-          type="button"
-          className="level-editor__step"
-          onClick={() => commit(level - 1)}
-          disabled={level <= MIN_LEVEL}
-          aria-label="Diminuir nível"
-        >
+        <button type="button" className="level-editor__step" onClick={() => commit(value - 1)} disabled={value <= min} aria-label={`Diminuir ${name}`}>
           −
         </button>
         <input
           className="level-editor__input"
           type="number"
           inputMode="numeric"
-          min={MIN_LEVEL}
-          max={MAX_LEVEL}
+          min={min}
+          max={max}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commit(Number(draft))}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
           }}
-          aria-label="Nível"
+          aria-label={name}
         />
-        <button
-          type="button"
-          className="level-editor__step"
-          onClick={() => commit(level + 1)}
-          disabled={level >= MAX_LEVEL}
-          aria-label="Aumentar nível"
-        >
+        <button type="button" className="level-editor__step" onClick={() => commit(value + 1)} disabled={value >= max} aria-label={`Aumentar ${name}`}>
           +
         </button>
       </div>

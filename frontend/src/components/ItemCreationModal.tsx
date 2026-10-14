@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import type { ItemRarity, NewItemInput } from '../types'
+import { MAX_CONTAINER_SLOTS, type ItemRarity, type NewItemInput } from '../types'
 import { ITEM_SPRITES, ITEM_SPRITE_CATEGORIES, RARITIES, RARITY_LABEL, isValidItemInput } from '../domain/itemForge'
 import { CategoryTabs } from './CategoryTabs'
 import { IconView } from './IconView'
@@ -43,7 +43,11 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
     }
   }
   const [quantityText, setQuantityText] = useState('1')
-  const quantity = Number.parseInt(quantityText, 10)
+  const [storage, setStorage] = useState(false)
+  const [containerText, setContainerText] = useState('8')
+  const containerSlots = Number.parseInt(containerText, 10)
+  const containerOk = !storage || (containerSlots >= 1 && containerSlots <= MAX_CONTAINER_SLOTS)
+  const quantity = storage ? 1 : Number.parseInt(quantityText, 10)
 
   const input: NewItemInput = {
     name,
@@ -53,8 +57,9 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
     rarity,
     quantity: quantity >= 1 ? quantity : 1,
     maxStack: Math.max(quantity, 99),
+    containerSlots: storage && containerOk ? containerSlots : undefined,
   }
-  const valid = quantity >= 1 && isValidItemInput(input)
+  const valid = quantity >= 1 && containerOk && isValidItemInput(input)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -188,6 +193,26 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
           </div>
         </div>
 
+        <label className="checkbox">
+          <input type="checkbox" checked={storage} onChange={(e) => setStorage(e.target.checked)} />
+          <span>📦 Item de armazenamento (guarda outros itens dentro)</span>
+        </label>
+        {storage && (
+          <label className="field">
+            <span className="field__label">Slots internos (1–{MAX_CONTAINER_SLOTS})</span>
+            <input
+              className="input forge__qty"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={containerText}
+              onChange={(e) => setContainerText(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              aria-invalid={!containerOk}
+              aria-label="Slots internos"
+            />
+          </label>
+        )}
+
         <div className="field__row">
           <label className="field">
             <span className="field__label">Raridade</span>
@@ -206,7 +231,8 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              value={quantityText}
+              value={storage ? '1' : quantityText}
+              disabled={storage}
               onChange={(e) => setQuantityText(e.target.value.replace(/\D/g, '').slice(0, 3))}
               aria-invalid={!(quantity >= 1)}
             />

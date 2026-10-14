@@ -58,8 +58,8 @@ const settleJoin = (accepted: boolean) => {
   pendingJoin = null
 }
 
-function patchSlots(current: InventorySlot[] | undefined, incoming: InventorySlot[]) {
-  const size = Math.max(current?.length ?? 0, ...incoming.map((s) => s.index + 1))
+function patchSlots(current: InventorySlot[] | undefined, incoming: InventorySlot[], resized?: number) {
+  const size = resized ?? Math.max(current?.length ?? 0, ...incoming.map((s) => s.index + 1))
   const next: InventorySlot[] = Array.from({ length: size }, (_, index) => current?.[index] ?? { index, item: null })
   for (const slot of incoming) next[slot.index] = { index: slot.index, item: slot.item }
   return next
@@ -77,7 +77,7 @@ export const useRoomStore = create<RoomState>((set, get) => {
           void characterRepository.updateInventory(selfId, useInventoryStore.getState().slots)
         } else {
           set((s) => ({
-            inventories: { ...s.inventories, [event.ownerId]: patchSlots(s.inventories[event.ownerId], event.slots) },
+            inventories: { ...s.inventories, [event.ownerId]: patchSlots(s.inventories[event.ownerId], event.slots, event.size) },
           }))
         }
         break

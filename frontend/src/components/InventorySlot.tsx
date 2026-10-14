@@ -13,15 +13,18 @@ interface Props {
    */
   onEmptyLongPress?: (slotIndex: number) => boolean
   /** Toque curto em slot ocupado (inspecionar o item). */
-  onItemTap?: (item: Item, slotIndex: number) => void
+  onItemTap?: (item: Item, slotIndex: number, inner?: number) => void
+  /** Slot da mochila cujo item de armazenamento contém este slot (grade interna). */
+  containerSlot?: number
 }
 
-export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPress, onItemTap }: Props) {
-  const { isOver, isDragActive, attributes } = useDropTarget({
-    id: `slot-${slot.index}`,
-    kind: 'slot',
-    slotIndex: slot.index,
-  })
+export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPress, onItemTap, containerSlot }: Props) {
+  const inner = containerSlot !== undefined
+  const { isOver, isDragActive, attributes } = useDropTarget(
+    inner
+      ? { id: `slot-${containerSlot}-${slot.index}`, kind: 'slot', slotIndex: containerSlot, inner: slot.index }
+      : { id: `slot-${slot.index}`, kind: 'slot', slotIndex: slot.index },
+  )
   const [denied, setDenied] = useState(false)
 
   useEffect(() => {
@@ -54,7 +57,7 @@ export const InventorySlot = memo(function InventorySlot({ slot, onEmptyLongPres
   return (
     <div className={className} {...attributes} {...handlers} data-slot-index={slot.index}>
       {slot.item ? (
-        <DraggableItem item={slot.item} slotIndex={slot.index} onTap={onItemTap} />
+        <DraggableItem item={slot.item} slotIndex={inner ? containerSlot : slot.index} inner={inner ? slot.index : undefined} onTap={onItemTap} />
       ) : (
         <span className="inventory-slot__index">{slot.index + 1}</span>
       )}

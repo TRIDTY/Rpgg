@@ -7,7 +7,7 @@ interface Props {
   /** Long press em slot vazio (ex.: Mestre forjando um item). Retorna se a ação foi permitida. */
   onEmptyLongPress?: (slotIndex: number) => boolean
   /** Toque curto em um item: abre a inspeção (imagem, nome, descrição). */
-  onItemTap?: (item: Item, slotIndex: number) => void
+  onItemTap?: (item: Item, slotIndex: number, inner?: number) => void
 }
 
 export function InventoryGrid({ onEmptyLongPress, onItemTap }: Props) {

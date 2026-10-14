@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { IconView } from '../components/IconView'
-import type { Actor, ActorId, Item, ItemId, NewItemInput, PlayerId } from '../types'
+import type { Actor, ActorId, Item, ItemId, NewItemInput, PlayerId, ItemLocation } from '../types'
 import { DragDropProvider } from '../dnd/DragDropProvider'
 import { DragOverlay } from '../dnd/DragOverlay'
 import type { DragPayload, DropTarget } from '../dnd/DragDropController'
@@ -15,6 +15,7 @@ import {
   MoveItem,
   RemoveBot,
   SetBotHidden,
+  SetInventorySize,
   SetEquipped,
   SetLevel,
   TakeItem,
@@ -28,6 +29,7 @@ import { PeerInventoryModal } from '../components/PeerInventoryModal'
 import { ItemDetailsModal } from '../components/ItemDetailsModal'
 import { DiscardModal } from '../components/DiscardModal'
 import { BotCreationModal } from '../components/BotCreationModal'
+import { ContainerPanel } from '../components/ContainerPanel'
 import { TrashDropZone } from '../components/TrashDropZone'
 import '../App.css'
 import './screens.css'
@@ -39,15 +41,17 @@ interface PendingTrade {
 
 interface PendingDiscard {
   itemId: ItemId
-  slotIndex: number
+  loc: ItemLocation
 }
 
 interface ItemDetails {
   item: Item
-  /** Slot da própria mochila: habilita equipar/desequipar. */
-  ownSlotIndex?: number
+  /** Posição na própria mochila: habilita equipar/desequipar (fora de containers) e abrir containers. */
+  own?: ItemLocation
   /** Mochila de bot aberta pelo Mestre: habilita pegar/descartar. */
-  bot?: { ownerId: PlayerId; slotIndex: number }
+  bot?: { ownerId: PlayerId; loc: ItemLocation }
+  /** Item de armazenamento de outro membro (Mestre): habilita abrir o conteúdo. */
+  peer?: { ownerId: PlayerId; slotIndex: number }
 }
 
 interface ForgeTarget {
@@ -74,6 +78,9 @@ export function SessionScreen() {
   const [forgeTarget, setForgeTarget] = useState<ForgeTarget | null>(null)
   const [details, setDetails] = useState<ItemDetails | null>(null)
   const [creatingBot, setCreatingBot] = useState(false)
+  const [openContainer, setOpenContainer] = useState<number | null>(null)
+  const [peerContainer, setPeerContainer] = useState<number | null>(null)
+  const openContainerItem = useInventoryStore((s) => (openContainer === null ? undefined : s.slots[openContainer]?.item))
 
   const isGameMaster = self?.role === 'master'
   const isHost = mode === 'hosting'
@@ -87,12 +94,23 @@ export function SessionScreen() {
     [isGameMaster, self],
   )
 
-  const handleItemTap = useCallback((item: Item, slotIndex: number) => setDetails({ item, ownSlotIndex: slotIndex }), [])
+  const handleItemTap = useCallback(
+    (item: Item, slotIndex: number, inner?: number) => setDetails({ item, own: { slot: slotIndex, inner } }),
+    [],
+  )
 
   const toggleEquip = (item: Item, equipped: boolean) => {
     if (!details) return
-    if (details.ownSlotIndex !== undefined) SetEquipped(details.ownSlotIndex, item.id, equipped)
-    else if (details.bot) SetEquipped(details.bot.slotIndex, item.id, equipped, details.bot.ownerId)
+    if (details.own) SetEquipped(details.own.slot, item.id, equipped)
+    else if (details.bot) SetEquipped(details.bot.loc.slot, item.id, equipped, details.bot.ownerId)
+    setDetails(null)
+  }
+
+  const openContainerFromDetails = () => {
+    if (!details) return
+    if (details.own) setOpenContainer(details.own.slot)
+    else if (details.bot) setPeerContainer(details.bot.loc.slot)
+    else if (details.peer) setPeerContainer(details.peer.slotIndex)
     setDetails(null)
   }
 
@@ -104,14 +122,21 @@ export function SessionScreen() {
   const handleDrop = useCallback(
     (payload: DragPayload, target: DropTarget) => {
       switch (target.kind) {
-        case 'slot':
-          moveItem(payload.fromSlot, target.slotIndex)
-          MoveItem(payload.fromSlot, target.slotIndex)
+        case 'slot': {
+          const from = { slot: payload.fromSlot, inner: payload.fromInner }
+          const to = { slot: target.slotIndex, inner: target.inner }
+          moveItem(from, to)
+          MoveItem(from, to)
           return
+        }
         case 'trash':
-          setPendingDiscard({ itemId: payload.itemId, slotIndex: payload.fromSlot })
+          setPendingDiscard({ itemId: payload.itemId, loc: { slot: payload.fromSlot, inner: payload.fromInner } })
           return
         case 'actor':
+          if (payload.fromInner !== undefined) {
+            useInventoryStore.getState().pushNotice('Tire o item do armazenamento antes de enviar.')
+            return
+          }
           setPendingTrade({ itemId: payload.itemId, targetPlayerId: target.actorId })
       }
     },
@@ -134,21 +159,23 @@ export function SessionScreen() {
 
   const confirmDiscard = () => {
     if (pendingDiscard) {
-      removeItem(pendingDiscard.slotIndex, pendingDiscard.itemId)
-      DiscardItem(pendingDiscard.slotIndex, pendingDiscard.itemId)
+      removeItem(pendingDiscard.loc, pendingDiscard.itemId)
+      DiscardItem(pendingDiscard.loc, pendingDiscard.itemId)
     }
     setPendingDiscard(null)
   }
 
-  const takeFromBot = ({ ownerId, slotIndex }: NonNullable<ItemDetails['bot']>, item: Item) => {
-    TakeItem(ownerId, slotIndex, item.id)
+  const takeFromBot = ({ ownerId, loc }: NonNullable<ItemDetails['bot']>, item: Item) => {
+    TakeItem(ownerId, loc, item.id)
     setDetails(null)
   }
 
-  const discardFromBot = ({ ownerId, slotIndex }: NonNullable<ItemDetails['bot']>, item: Item) => {
-    DiscardItem(slotIndex, item.id, ownerId)
+  const discardFromBot = ({ ownerId, loc }: NonNullable<ItemDetails['bot']>, item: Item) => {
+    DiscardItem(loc, item.id, ownerId)
     setDetails(null)
   }
+
+  const peerContainerItem = peerContainer !== null ? peerSlots?.[peerContainer]?.item : undefined
 
   const createBot = (name: string, avatar: string, hidden: boolean) => {
     CreateBot(name, avatar, hidden)
@@ -187,8 +214,11 @@ export function SessionScreen() {
             </button>
           )}
         </div>
-        <div className="app__inventory">
+        <div className={`app__inventory ${openContainerItem?.container ? 'app__inventory--split' : ''}`}>
           <InventoryGrid onEmptyLongPress={handleEmptySlotLongPress} onItemTap={handleItemTap} />
+          {openContainer !== null && openContainerItem?.container && (
+            <ContainerPanel slotIndex={openContainer} onClose={() => setOpenContainer(null)} onItemTap={handleItemTap} />
+          )}
         </div>
         <div className="app__sidebar">
           <SessionSidebar
@@ -228,7 +258,12 @@ export function SessionScreen() {
         <ItemDetailsModal
           item={details.item}
           onClose={() => setDetails(null)}
-          onToggleEquip={details.ownSlotIndex !== undefined || details.bot ? toggleEquip : undefined}
+          onToggleEquip={
+            (details.own && details.own.inner === undefined) || (details.bot && details.bot.loc.inner === undefined)
+              ? toggleEquip
+              : undefined
+          }
+          onOpenContainer={details.own || details.bot || details.peer ? openContainerFromDetails : undefined}
           actions={
             details.bot && (
               <>
@@ -253,6 +288,7 @@ export function SessionScreen() {
           onRemoveBot={isGameMaster ? removeBot : undefined}
           onSetBotHidden={isGameMaster ? (actor, hidden) => SetBotHidden(actor.id, hidden) : undefined}
           onSetLevel={isGameMaster ? (actor, level) => SetLevel(actor.id, level) : undefined}
+          onSetSlots={isGameMaster ? (actor, slots) => SetInventorySize(actor.id, slots) : undefined}
           onOpenInventory={
             isGameMaster
               ? (actor) => {
@@ -267,17 +303,26 @@ export function SessionScreen() {
       {isGameMaster && peerActor && peerSlots && !forgeTarget && !details && (
         <PeerInventoryModal
           actor={peerActor}
-          slots={peerSlots}
+          slots={peerContainerItem?.container ?? peerSlots}
           manageable={peerActor.role === 'bot'}
-          onClose={() => setPeerInventoryId(null)}
+          containerOf={
+            peerContainer !== null && peerContainerItem?.container
+              ? { slotIndex: peerContainer, itemName: peerContainerItem.name }
+              : undefined
+          }
+          onClose={() => (peerContainer !== null ? setPeerContainer(null) : setPeerInventoryId(null))}
           onEmptyLongPress={(slotIndex) =>
             setForgeTarget({ ownerId: peerActor.id, ownerName: peerActor.name, slotIndex })
           }
-          onItemTap={(item, slotIndex) =>
+          onItemTap={(item, slotIndex) => {
+            const loc: ItemLocation =
+              peerContainer !== null && peerContainerItem?.container ? { slot: peerContainer, inner: slotIndex } : { slot: slotIndex }
             setDetails(
-              peerActor.role === 'bot' ? { item, bot: { ownerId: peerActor.id, slotIndex } } : { item },
+              peerActor.role === 'bot'
+                ? { item, bot: { ownerId: peerActor.id, loc } }
+                : { item, peer: { ownerId: peerActor.id, slotIndex: loc.slot } },
             )
-          }
+          }}
         />
       )}
 

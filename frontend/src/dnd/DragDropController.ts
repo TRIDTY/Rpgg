@@ -4,6 +4,8 @@ export interface ItemDragPayload {
   kind: 'item'
   itemId: ItemId
   fromSlot: number
+  /** Slot interno quando o item sai de dentro de um item de armazenamento. */
+  fromInner?: number
   icon: string
   name: string
   quantity: number
@@ -12,7 +14,7 @@ export interface ItemDragPayload {
 export type DragPayload = ItemDragPayload
 
 export type DropTarget =
-  | { id: string; kind: 'slot'; slotIndex: number }
+  | { id: string; kind: 'slot'; slotIndex: number; inner?: number }
   | { id: string; kind: 'actor'; actorId: ActorId }
   | { id: string; kind: 'trash' }
 

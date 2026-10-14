@@ -1,4 +1,4 @@
-import type { InventorySlot, Item, ItemId } from '../types'
+import type { InventorySlot, Item, ItemId, ItemLocation } from '../types'
 
 export interface InventoryChange {
   slots: InventorySlot[]
@@ -15,7 +15,88 @@ const descriptionOf = (item: Item) => (item.description ?? '').trim()
  * o mesmo nome e a mesma descrição e ambos são empilháveis.
  */
 export function canStack(a: Item, b: Item) {
-  return a.name === b.name && descriptionOf(a) === descriptionOf(b) && a.image === b.image && a.maxStack > 1 && b.maxStack > 1
+  return (
+    !a.container &&
+    !b.container &&
+    a.name === b.name &&
+    descriptionOf(a) === descriptionOf(b) &&
+    a.image === b.image &&
+    a.maxStack > 1 &&
+    b.maxStack > 1
+  )
+}
+
+export const isContainer = (item: Item) => item.container !== undefined
+
+/** Slot real (da mochila ou interno) apontado por `loc`, clonando o container para não mutar o estado anterior. */
+function resolve(next: InventorySlot[], loc: ItemLocation): InventorySlot | null {
+  const bag = next[loc.slot]
+  if (!bag) return null
+  if (loc.inner === undefined) return bag
+  if (!bag.item?.container) return null
+  const container = clone(bag.item.container)
+  bag.item = { ...bag.item, container }
+  return container[loc.inner] ?? null
+}
+
+const sameLocation = (a: ItemLocation, b: ItemLocation) => a.slot === b.slot && a.inner === b.inner
+
+/**
+ * Move entre quaisquer posições (mochila ↔ dentro de itens de armazenamento) com as
+ * mesmas regras de fusão/troca de `moveItem`. Itens de armazenamento nunca entram em
+ * outro item de armazenamento (nem em si mesmos).
+ */
+export function moveItemAt(slots: InventorySlot[], from: ItemLocation, to: ItemLocation): InventoryChange | null {
+  if (from.inner === undefined && to.inner === undefined) return moveItem(slots, from.slot, to.slot)
+  if (sameLocation(from, to)) return null
+  const next = clone(slots)
+  const source = resolve(next, from)
+  const target = resolve(next, to)
+  if (!source?.item || !target) return null
+  if (to.inner !== undefined && (isContainer(source.item) || from.slot === to.slot && from.inner === undefined)) return null
+  if (from.inner !== undefined && target.item && isContainer(target.item)) return null
+
+  const room = target.item && canStack(source.item, target.item) ? target.item.maxStack - target.item.quantity : 0
+  if (target.item && room > 0) {
+    const moved = Math.min(room, source.item.quantity)
+    target.item = { ...target.item, quantity: target.item.quantity + moved }
+    const remaining = source.item.quantity - moved
+    source.item = remaining > 0 ? { ...source.item, quantity: remaining } : null
+  } else {
+    const swapped = target.item
+    target.item = source.item
+    source.item = swapped
+  }
+  const changed = from.slot === to.slot ? [next[from.slot]] : [next[from.slot], next[to.slot]]
+  return { slots: next, changed }
+}
+
+/** `removeItem` para qualquer posição (inclusive dentro de um item de armazenamento). */
+export function removeItemAt(
+  slots: InventorySlot[],
+  loc: ItemLocation,
+  itemId?: ItemId,
+): (InventoryChange & { item: Item }) | null {
+  if (loc.inner === undefined) return removeItem(slots, loc.slot, itemId)
+  const next = clone(slots)
+  const slot = resolve(next, loc)
+  if (!slot?.item) return null
+  if (itemId && slot.item.id !== itemId) return null
+  const item = slot.item
+  slot.item = null
+  return { slots: next, changed: [next[loc.slot]], item }
+}
+
+/** Redimensiona a mochila; null se algum slot a remover ainda tem item. */
+export function resizeInventory(slots: InventorySlot[], size: number): InventorySlot[] | null {
+  if (slots.slice(size).some((s) => s.item !== null)) return null
+  return Array.from({ length: size }, (_, index) => ({ index, item: slots[index]?.item ?? null }))
+}
+
+export const itemAt = (slots: InventorySlot[], loc: ItemLocation): Item | null => {
+  const bag = slots[loc.slot]?.item ?? null
+  if (loc.inner === undefined) return bag
+  return bag?.container?.[loc.inner]?.item ?? null
 }
 
 /**

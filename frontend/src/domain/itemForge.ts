@@ -1,4 +1,5 @@
-import type { Item, ItemRarity, NewItemInput } from '../types'
+import { MAX_CONTAINER_SLOTS, type Item, type ItemRarity, type NewItemInput } from '../types'
+import { emptyInventory } from './character'
 import { newId } from './character'
 
 export interface ItemSprite {
@@ -125,9 +126,11 @@ export const RARITIES = Object.keys(RARITY_LABEL) as ItemRarity[]
 
 /** Instancia a entidade Item com um UUID novo a partir do formulário do Mestre. */
 export function forgeItem(input: NewItemInput): Item {
-  const quantity = Math.max(1, Math.floor(input.quantity) || 1)
-  const maxStack = Math.max(quantity, Math.floor(input.maxStack) || 1)
+  const storage = input.containerSlots !== undefined
+  const quantity = storage ? 1 : Math.max(1, Math.floor(input.quantity) || 1)
+  const maxStack = storage ? 1 : Math.max(quantity, Math.floor(input.maxStack) || 1)
   return {
+    ...(storage ? { container: emptyInventory(input.containerSlots) } : {}),
     id: newId(),
     name: input.name.trim(),
     icon: input.icon,
@@ -147,6 +150,8 @@ export function isValidItemInput(input: NewItemInput): boolean {
     input.name.trim().length > 0 &&
     input.icon.length > 0 &&
     (input.image === undefined || (input.image.startsWith('data:image/') && input.image.length <= MAX_ITEM_IMAGE_CHARS)) &&
+    (input.containerSlots === undefined ||
+      (Number.isInteger(input.containerSlots) && input.containerSlots >= 1 && input.containerSlots <= MAX_CONTAINER_SLOTS)) &&
     RARITIES.includes(input.rarity) &&
     Number.isInteger(input.quantity) &&
     input.quantity >= 1

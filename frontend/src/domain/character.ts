@@ -243,5 +243,6 @@ export function profileToActor(profile: CharacterProfile, online: boolean): Acto
     level: profile.Level,
     title: profile.Title,
     equipped: profile.Inventory.flatMap((s) => (s.item?.equipped ? [s.item] : [])),
+    slots: profile.Inventory.length,
   }
 }

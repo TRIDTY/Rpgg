@@ -7,17 +7,20 @@ interface Props {
   item: Item
   slotIndex: number
   /** Toque curto no item (leitura). Segurar continua iniciando o arrasto. */
-  onTap?: (item: Item, slotIndex: number) => void
+  onTap?: (item: Item, slotIndex: number, inner?: number) => void
+  /** Slot interno quando o item está dentro de um item de armazenamento. */
+  inner?: number
 }
 
-export function DraggableItem({ item, slotIndex, onTap }: Props) {
+export function DraggableItem({ item, slotIndex, inner, onTap }: Props) {
   const { handlers, isPressing, isDragging } = useDraggable({
-    id: `slot-${slotIndex}`,
-    onTap: onTap ? () => onTap(item, slotIndex) : undefined,
+    id: inner === undefined ? `slot-${slotIndex}` : `slot-${slotIndex}-${inner}`,
+    onTap: onTap ? () => onTap(item, slotIndex, inner) : undefined,
     payload: {
       kind: 'item',
       itemId: item.id,
       fromSlot: slotIndex,
+      fromInner: inner,
       icon: item.icon,
       name: item.name,
       quantity: item.quantity,

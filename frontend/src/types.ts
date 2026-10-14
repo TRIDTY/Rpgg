@@ -13,6 +13,11 @@ export interface Item {
   description?: string
   /** Imagem anexada pelo Mestre (data URL); viaja com o item para quem o recebe. */
   image?: string
+  /**
+   * Item de armazenamento: slots internos (capacidade definida pelo Mestre).
+   * Viaja inteiro com o item; itens de armazenamento não entram em outros.
+   */
+  container?: InventorySlot[]
   /** Item em uso pelo personagem; visível para toda a sala via `Actor.equipped`. */
   equipped?: boolean
 }
@@ -39,6 +44,8 @@ export interface Actor {
   level?: number
   title?: string
   equipped: Item[]
+  /** Nº de slots da mochila (o Mestre pode limitar). */
+  slots?: number
   /** Bot oculto pelo Mestre: só chega aos Mestres; jogadores nem o recebem. */
   hidden?: boolean
 }
@@ -103,7 +110,8 @@ export interface SessionMember {
 export interface InventoryUpdatedEvent {
   type: 'InventoryUpdatedEvent'
   ownerId: ActorId
-  slots: InventorySlot[]
+  slots: InventorySlot[]  /** Presente quando a mochila foi redimensionada: `slots` traz a mochila inteira. */
+  size?: number
 }
 
 export interface ActorPresenceEvent {
@@ -166,10 +174,26 @@ export interface JoinRoomCommand {
   character: CharacterProfile
 }
 
+/** Posição de um item: slot da mochila e, se dentro de um item de armazenamento, o slot interno. */
+export interface ItemLocation {
+  slot: number
+  inner?: number
+}
+
 export interface MoveItemCommand {
   type: 'MoveItem'
-  fromSlot: number
-  toSlot: number
+  from: ItemLocation
+  to: ItemLocation
+}
+
+export const MAX_INVENTORY_SLOTS = 100
+export const MAX_CONTAINER_SLOTS = 40
+
+/** Mestre limita/amplia a mochila de um jogador ou bot (slots a remover precisam estar vazios). */
+export interface SetInventorySizeCommand {
+  type: 'SetInventorySize'
+  targetId: PlayerId
+  size: number
 }
 
 export interface InitiateTradeCommand {
@@ -194,6 +218,8 @@ export interface NewItemInput {
   rarity: ItemRarity
   quantity: number
   maxStack: number
+  /** Item de armazenamento com este nº de slots internos. */
+  containerSlots?: number
 }
 
 /** Jogador solta um item na lixeira: o Host destrói a pilha inteira daquele slot. */
@@ -203,6 +229,8 @@ export interface DiscardItemCommand {
   ownerId?: PlayerId
   slotIndex: number
   itemId: ItemId
+  /** Slot interno, quando o item está dentro de um item de armazenamento. */
+  inner?: number
 }
 
 /** Mestre entrega um item pronto (ex.: loot do catálogo) a um membro. */
@@ -227,6 +255,7 @@ export interface TakeItemCommand {
   ownerId: PlayerId
   slotIndex: number
   itemId: ItemId
+  inner?: number
 }
 
 export interface CreateBotCommand {
@@ -260,6 +289,7 @@ export type ClientCommand =
   | TakeItemCommand
   | SetEquippedCommand
   | CreateBotCommand
+  | SetInventorySizeCommand
   | SetBotHiddenCommand
   | RemoveBotCommand
   | SetLevelCommand

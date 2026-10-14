@@ -14,23 +14,25 @@ interface Props {
   onItemTap?: (item: Item, slotIndex: number) => void
   /** Mochila de bot: o Mestre pega e descarta itens livremente. */
   manageable?: boolean
+  /** Conteúdo de um item de armazenamento (em vez da mochila): slot da mochila onde ele está. */
+  containerOf?: { slotIndex: number; itemName: string }
 }
 
 /** Visão do Mestre sobre a mochila de um jogador conectado (somente leitura + forja em slots vazios). */
-export function PeerInventoryModal({ actor, slots, onClose, onEmptyLongPress, onItemTap, manageable }: Props) {
+export function PeerInventoryModal({ actor, slots, onClose, onEmptyLongPress, onItemTap, manageable, containerOf }: Props) {
   const used = slots.filter((s) => s.item !== null).length
   return (
-    <Modal title={`🎒 Mochila de ${actor.name}`} onClose={onClose} variant="sheet">
+    <Modal title={containerOf ? `📦 ${containerOf.itemName} (${actor.name})` : `🎒 Mochila de ${actor.name}`} onClose={onClose} variant="sheet">
       <p className="peer-inv__hint">
-        {used}/{slots.length} slots · toque em um item para {manageable ? 'pegar ou descartar' : 'ler'} · segure um slot
-        vazio para forjar
+        {used}/{slots.length} slots · toque em um item para {manageable ? 'pegar ou descartar' : 'ler'}
+        {!containerOf && ' · segure um slot vazio para forjar'}
       </p>
       <div className="peer-inv__grid">
         {slots.map((slot) => (
           <PeerSlot
             key={slot.index}
             slot={slot}
-            onLongPress={() => onEmptyLongPress(slot.index)}
+            onLongPress={() => !containerOf && onEmptyLongPress(slot.index)}
             onTap={onItemTap && ((item) => onItemTap(item, slot.index))}
           />
         ))}

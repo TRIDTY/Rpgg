@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import type { Actor, ActorId, InventorySlot, InventoryUpdatedEvent, Item, ItemId } from '../types'
+import type { Actor, ActorId, InventorySlot, InventoryUpdatedEvent, Item, ItemId, ItemLocation } from '../types'
 import { INVENTORY_CAPACITY } from '../data/mockData'
 import { emptyInventory } from '../domain/character'
-import { moveItem as moveItemOp, removeItem as removeItemOp } from '../domain/inventory'
+import { moveItemAt, removeItemAt } from '../domain/inventory'
 
 export interface Notice {
   id: number
@@ -20,8 +20,8 @@ interface InventoryState {
   notices: Notice[]
 
   hydrate: (input: { selfId: ActorId; roomName: string; slots: InventorySlot[]; actors: Actor[] }) => void
-  moveItem: (fromSlot: number, toSlot: number) => void
-  removeItem: (slotIndex: number, itemId?: ItemId) => void
+  moveItem: (from: ItemLocation, to: ItemLocation) => void
+  removeItem: (loc: ItemLocation, itemId?: ItemId) => void
   applyInventoryUpdated: (event: InventoryUpdatedEvent) => void
   setActors: (actors: Actor[]) => void
   setActorOnline: (actorId: ActorId, online: boolean) => void
@@ -53,21 +53,25 @@ export const useInventoryStore = create<InventoryState>((set) => ({
       actors: actors.filter((a) => a.id !== selfId),
     }),
 
-  moveItem: (fromSlot, toSlot) =>
+  moveItem: (from, to) =>
     set((state) => {
-      const change = moveItemOp(state.slots, fromSlot, toSlot)
+      const change = moveItemAt(state.slots, from, to)
       return change ? { slots: change.slots } : state
     }),
 
-  removeItem: (slotIndex, itemId) =>
+  removeItem: (loc, itemId) =>
     set((state) => {
-      const change = removeItemOp(state.slots, slotIndex, itemId)
+      const change = removeItemAt(state.slots, loc, itemId)
       return change ? { slots: change.slots } : state
     }),
 
   applyInventoryUpdated: (event) =>
     set((state) => {
       if (event.ownerId !== state.selfId) return state
+      if (event.size !== undefined) {
+        const slots = Array.from({ length: event.size }, (_, index) => event.slots[index] ?? { index, item: null })
+        return { slots, capacity: event.size }
+      }
       const slots = state.slots.map((s) => ({ ...s }))
       for (const incoming of event.slots) {
         if (incoming.index >= 0 && incoming.index < slots.length) {
@@ -105,8 +109,14 @@ export const useInventoryStore = create<InventoryState>((set) => ({
     set({ selfId: '', self: null, roomName: '', slots: emptyInventory(), actors: [], connected: false, notices: [] }),
 }))
 
-export const selectItemById = (itemId: ItemId) => (state: InventoryState): Item | undefined =>
-  state.slots.find((s) => s.item?.id === itemId)?.item ?? undefined
+export const selectItemById = (itemId: ItemId) => (state: InventoryState): Item | undefined => {
+  for (const s of state.slots) {
+    if (s.item?.id === itemId) return s.item
+    const inner = s.item?.container?.find((c) => c.item?.id === itemId)?.item
+    if (inner) return inner
+  }
+  return undefined
+}
 
 export const selectActorById = (actorId: ActorId) => (state: InventoryState): Actor | undefined =>
   state.actors.find((a) => a.id === actorId)

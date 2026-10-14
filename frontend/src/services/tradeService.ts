@@ -1,4 +1,4 @@
-import type { ActorId, ItemId, NewItemInput, PlayerId } from '../types'
+import type { ActorId, ItemId, NewItemInput, PlayerId, ItemLocation } from '../types'
 import { useRoomStore } from '../store/roomStore'
 
 /**
@@ -11,15 +11,21 @@ export function InitiateTrade(itemId: ItemId, targetPlayerId: ActorId) {
   useRoomStore.getState().sendCommand({ type: 'InitiateTrade', itemId, targetPlayerId })
 }
 
-export function MoveItem(fromSlot: number, toSlot: number) {
-  console.log(`MoveItem(${fromSlot}, ${toSlot})`)
-  useRoomStore.getState().sendCommand({ type: 'MoveItem', fromSlot, toSlot })
+export function MoveItem(from: ItemLocation, to: ItemLocation) {
+  console.log(`MoveItem(${JSON.stringify(from)} -> ${JSON.stringify(to)})`)
+  useRoomStore.getState().sendCommand({ type: 'MoveItem', from, to })
 }
 
 /** Item solto na lixeira: o Host destrói a pilha daquele slot e confirma com InventoryUpdatedEvent. */
-export function DiscardItem(slotIndex: number, itemId: ItemId, ownerId?: PlayerId) {
-  console.log(`DiscardItem(${slotIndex}, ${itemId}${ownerId ? `, ${ownerId}` : ''})`)
-  useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex, itemId, ownerId })
+export function DiscardItem(loc: ItemLocation, itemId: ItemId, ownerId?: PlayerId) {
+  console.log(`DiscardItem(${loc.slot}${loc.inner !== undefined ? `/${loc.inner}` : ''}, ${itemId}${ownerId ? `, ${ownerId}` : ''})`)
+  useRoomStore.getState().sendCommand({ type: 'DiscardItem', slotIndex: loc.slot, inner: loc.inner, itemId, ownerId })
+}
+
+/** Mestre define o nº de slots da mochila de um jogador ou bot. */
+export function SetInventorySize(targetId: PlayerId, size: number) {
+  console.log(`SetInventorySize(${targetId}, ${size})`)
+  useRoomStore.getState().sendCommand({ type: 'SetInventorySize', targetId, size })
 }
 
 /** Equipa/desequipa um item da própria mochila (ou, se Mestre, da de um bot); o Host propaga `Actor.equipped` à sala. */
@@ -29,9 +35,9 @@ export function SetEquipped(slotIndex: number, itemId: ItemId, equipped: boolean
 }
 
 /** Mestre retira um item da mochila de um bot para a própria mochila. */
-export function TakeItem(ownerId: PlayerId, slotIndex: number, itemId: ItemId) {
-  console.log(`TakeItem(${ownerId}, ${slotIndex}, ${itemId})`)
-  useRoomStore.getState().sendCommand({ type: 'TakeItem', ownerId, slotIndex, itemId })
+export function TakeItem(ownerId: PlayerId, loc: ItemLocation, itemId: ItemId) {
+  console.log(`TakeItem(${ownerId}, ${loc.slot}${loc.inner !== undefined ? `/${loc.inner}` : ''}, ${itemId})`)
+  useRoomStore.getState().sendCommand({ type: 'TakeItem', ownerId, slotIndex: loc.slot, inner: loc.inner, itemId })
 }
 
 /** Mestre cria um bot (NPC/baú/mercador) na sala; a mochila dele fica sob controle total do Mestre. */

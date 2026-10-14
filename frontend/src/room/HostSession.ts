@@ -11,9 +11,10 @@ import type {
   ServerEvent,
   SessionMember,
 } from '../types'
-import { MAX_LEVEL, MIN_LEVEL } from '../types'
+import { MAX_INVENTORY_SLOTS,
+  MAX_LEVEL, MIN_LEVEL } from '../types'
 import { createCharacter, newId, profileToActor } from '../domain/character'
-import { addItem, moveItem, placeItem, removeItem, setEquipped, takeItem, unequipped } from '../domain/inventory'
+import { addItem, moveItemAt, placeItem, removeItemAt, resizeInventory, setEquipped, takeItem, unequipped } from '../domain/inventory'
 import { forgeItem, isValidItemInput } from '../domain/itemForge'
 import type { ClientId, ServerAddress, ServerTransport } from './transport'
 
@@ -238,7 +239,7 @@ export class HostSession {
 
     switch (command.type) {
       case 'MoveItem': {
-        const change = moveItem(member.profile.Inventory, command.fromSlot, command.toSlot)
+        const change = moveItemAt(member.profile.Inventory, command.from, command.to)
         if (!change) return
         member.profile.Inventory = change.slots
         this.inventoryUpdated(playerId, change.changed)
@@ -247,7 +248,7 @@ export class HostSession {
       case 'DiscardItem': {
         const owner = this.managedMember(member, command.ownerId ?? playerId)
         if (!owner) return
-        const change = removeItem(owner.profile.Inventory, command.slotIndex, command.itemId)
+        const change = removeItemAt(owner.profile.Inventory, { slot: command.slotIndex, inner: command.inner }, command.itemId)
         if (!change) {
           console.warn(`[host] descarte inválido de ${member.profile.Name} no slot ${command.slotIndex} de ${owner.profile.Name}`)
           return
@@ -273,7 +274,7 @@ export class HostSession {
       case 'TakeItem': {
         const owner = this.managedMember(member, command.ownerId)
         if (!owner || owner === member) return
-        const taken = removeItem(owner.profile.Inventory, command.slotIndex, command.itemId)
+        const taken = removeItemAt(owner.profile.Inventory, { slot: command.slotIndex, inner: command.inner }, command.itemId)
         if (!taken) return
         const added = addItem(member.profile.Inventory, unequipped(taken.item))
         if (!added) {
@@ -300,6 +301,28 @@ export class HostSession {
         this.broadcastSession()
         this.notifyGameMasters(bot.profile.PlayerId, bot.profile.Inventory)
         console.log(`[host] ${member.profile.Name} criou o bot ${bot.profile.Avatar} ${name} (${bot.profile.PlayerId})`)
+        break
+      }
+      case 'SetInventorySize': {
+        if (!isGameMaster(member)) return
+        const target = this.session.members[command.targetId]
+        if (!target || isGameMaster(target)) return
+        if (!Number.isInteger(command.size) || command.size < 1 || command.size > MAX_INVENTORY_SLOTS) return
+        const slots = resizeInventory(target.profile.Inventory, command.size)
+        if (!slots) {
+          console.warn(`[host] mochila de ${target.profile.Name} tem itens além do slot ${command.size}; redimensionamento recusado`)
+          return
+        }
+        target.profile.Inventory = slots
+        target.profile.UpdatedAt = new Date().toISOString()
+        this.sendTo(command.targetId, { type: 'InventoryUpdatedEvent', ownerId: command.targetId, slots, size: slots.length })
+        for (const m of this.onlineMembers()) {
+          if (isGameMaster(m) && m.profile.PlayerId !== command.targetId) {
+            this.sendTo(m.profile.PlayerId, { type: 'InventoryUpdatedEvent', ownerId: command.targetId, slots, size: slots.length })
+          }
+        }
+        this.broadcastSession()
+        console.log(`[host] ${member.profile.Name} definiu ${slots.length} slots para ${target.profile.Name}`)
         break
       }
       case 'SetBotHidden': {
