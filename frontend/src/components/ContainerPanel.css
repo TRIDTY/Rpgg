@@ -1,0 +1,55 @@
+.app__inventory--split {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, auto);
+  gap: 8px;
+}
+
+.container-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 42%;
+  /* fica acima da lixeira (FAB fixo no canto inferior esquerdo) */
+  margin-bottom: 76px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(120, 90, 40, 0.28), rgba(40, 28, 60, 0.9));
+  border: 1px solid rgba(255, 200, 80, 0.35);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.container-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-weight: 800;
+}
+
+.container-panel__icon {
+  font-size: 22px;
+  width: 26px;
+  height: 26px;
+}
+
+.container-panel__title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.container-panel__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.container-panel__scroll {
+  overflow-y: auto;
+  padding: 0 10px 10px;
+}

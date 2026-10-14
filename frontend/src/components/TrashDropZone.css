@@ -1,0 +1,85 @@
+.trash-fab {
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(20, 14, 40, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  color: rgba(244, 241, 255, 0.55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  user-select: none;
+  touch-action: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.trash-fab__icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: grayscale(0.6);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.trash-fab__label {
+  font-size: 12px;
+  font-weight: 800;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-width 200ms ease, opacity 160ms ease;
+}
+
+.trash-fab--armed {
+  color: #ff8a8a;
+  border-color: rgba(255, 90, 90, 0.7);
+  background: rgba(60, 12, 20, 0.92);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 22px rgba(255, 90, 90, 0.45);
+  animation: trash-pulse 1s ease-in-out infinite;
+}
+
+.trash-fab--armed .trash-fab__icon {
+  filter: none;
+}
+
+.trash-fab--armed .trash-fab__label {
+  max-width: 160px;
+  opacity: 1;
+}
+
+.trash-fab--over {
+  animation: none;
+  transform: scale(1.15);
+  color: #fff;
+  background: linear-gradient(180deg, #ff6b6b, #c62828);
+  border-color: #fff;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 32px rgba(255, 90, 90, 0.8);
+}
+
+.trash-fab--over .trash-fab__icon {
+  transform: rotate(-12deg) scale(1.1);
+}
+
+@keyframes trash-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}

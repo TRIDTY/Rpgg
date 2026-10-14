@@ -1,0 +1,61 @@
+.drag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), rgba(20, 16, 40, 0.92));
+  border: 2px solid var(--gold);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 6px rgba(255, 200, 80, 0.12);
+  pointer-events: none;
+  will-change: transform;
+  animation: overlay-pop 160ms ease-out;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.drag-overlay--over-slot {
+  border-color: var(--accent);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 6px rgba(90, 200, 255, 0.2);
+}
+
+.drag-overlay--over-actor {
+  border-color: var(--success);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.6),
+    0 0 24px 8px rgba(120, 255, 170, 0.35);
+}
+
+.drag-overlay__icon {
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+}
+
+.drag-overlay__qty {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  text-shadow: 0 1px 2px #000;
+}
+
+@keyframes overlay-pop {
+  from {
+    scale: 0.7;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}

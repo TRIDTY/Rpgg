@@ -1,0 +1,54 @@
+.icon-view--image {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  object-fit: cover;
+  border-radius: 18%;
+  vertical-align: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.item-tile__icon.icon-view--image,
+.drag-overlay__icon.icon-view--image {
+  width: 72%;
+  height: 72%;
+  max-width: 64px;
+  max-height: 64px;
+  border-radius: 14%;
+}
+
+.avatar-bubble__face.icon-view--image,
+.inspect__avatar.icon-view--image,
+.member__avatar.icon-view--image,
+.trade__avatar.icon-view--image,
+.session-bar__avatar.icon-view--image,
+.character-chip__avatar.icon-view--image {
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+}
+
+.avatar-bubble__face.icon-view--image {
+  width: 100%;
+  height: 100%;
+}
+
+.inspect__avatar.icon-view--image {
+  width: 80px;
+  height: 80px;
+}
+
+.item-details__icon .icon-view--image,
+.discard__icon.icon-view--image,
+.trade__icon.icon-view--image {
+  width: 1.3em;
+  height: 1.3em;
+}
+
+.avatar-picker__option .icon-view--image,
+.sprite-picker__option .icon-view--image {
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 22%;
+}

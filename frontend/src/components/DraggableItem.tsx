@@ -1,0 +1,53 @@
+import type { Item } from '../types'
+import { useDraggable } from '../dnd/hooks'
+import { ItemTile } from './ItemTile'
+import './DraggableItem.css'
+
+interface Props {
+  item: Item
+  slotIndex: number
+  /** Toque curto no item (leitura). Segurar continua iniciando o arrasto. */
+  onTap?: (item: Item, slotIndex: number, inner?: number) => void
+  /** Slot interno quando o item está dentro de um item de armazenamento. */
+  inner?: number
+}
+
+export function DraggableItem({ item, slotIndex, inner, onTap }: Props) {
+  const { handlers, isPressing, isDragging } = useDraggable({
+    id: inner === undefined ? `slot-${slotIndex}` : `slot-${slotIndex}-${inner}`,
+    onTap: onTap ? () => onTap(item, slotIndex, inner) : undefined,
+    payload: {
+      kind: 'item',
+      itemId: item.id,
+      fromSlot: slotIndex,
+      fromInner: inner,
+      icon: item.icon,
+      name: item.name,
+      quantity: item.quantity,
+    },
+  })
+
+  const className = [
+    'draggable-item',
+    'item-tile',
+    `item-tile--${item.rarity}`,
+    item.equipped && 'item-tile--equipped',
+    isPressing && 'draggable-item--pressing',
+    isDragging && 'draggable-item--dragging',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <div
+      className={className}
+      title={item.description ? `${item.name} — ${item.description}` : item.name}
+      role="button"
+      aria-label={`${item.name}${item.quantity > 1 ? ` x${item.quantity}` : ''}`}
+      {...handlers}
+    >
+      <ItemTile item={item} />
+      <span className="draggable-item__press-ring" />
+    </div>
+  )
+}

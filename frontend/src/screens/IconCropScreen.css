@@ -1,0 +1,11 @@
+.crop__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.crop__kinds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
