@@ -132,16 +132,21 @@ export function forgeItem(input: NewItemInput): Item {
     name: input.name.trim(),
     icon: input.icon,
     description: input.description?.trim() || undefined,
+    image: input.image || undefined,
     rarity: input.rarity,
     quantity,
     maxStack,
   }
 }
 
+/** Limite da imagem anexada (data URL) para não inchar a ficha JSON nem as mensagens da sala. */
+export const MAX_ITEM_IMAGE_CHARS = 400_000
+
 export function isValidItemInput(input: NewItemInput): boolean {
   return (
     input.name.trim().length > 0 &&
     input.icon.length > 0 &&
+    (input.image === undefined || (input.image.startsWith('data:image/') && input.image.length <= MAX_ITEM_IMAGE_CHARS)) &&
     RARITIES.includes(input.rarity) &&
     Number.isInteger(input.quantity) &&
     input.quantity >= 1

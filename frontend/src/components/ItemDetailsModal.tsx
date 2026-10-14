@@ -42,6 +42,7 @@ export function ItemDetailsModal({ item, onClose, actions, onToggleEquip }: Prop
         <p className={`item-details__description ${item.description ? '' : 'is-empty'}`}>
           {item.description?.trim() || 'Sem descrição. O Mestre ainda não escreveu nada sobre este item.'}
         </p>
+        {item.image && <img className="item-details__image" src={item.image} alt={`Imagem de ${item.name}`} draggable={false} />}
       </div>
       <div className="btn-row">
         {onToggleEquip && (

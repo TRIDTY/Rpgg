@@ -11,6 +11,8 @@ export interface Item {
   maxStack: number
   rarity: ItemRarity
   description?: string
+  /** Imagem anexada pelo Mestre (data URL); viaja com o item para quem o recebe. */
+  image?: string
   /** Item em uso pelo personagem; visível para toda a sala via `Actor.equipped`. */
   equipped?: boolean
 }
@@ -184,6 +186,7 @@ export interface NewItemInput {
   name: string
   icon: string
   description?: string
+  image?: string
   rarity: ItemRarity
   quantity: number
   maxStack: number

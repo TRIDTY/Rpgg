@@ -5,9 +5,12 @@ import { CategoryTabs } from './CategoryTabs'
 import { IconView } from './IconView'
 import { useCustomIcons } from '../store/iconStore'
 import { Modal } from './Modal'
+import { ImageCropper } from './ImageCropper'
+import { pickImage, type ImageSource } from '../services/imagePicker'
 import './ItemCreationModal.css'
 
 const CUSTOM_TAB = { id: 'custom', label: '📷 Personalizados' }
+const ITEM_IMAGE_SIZE = 512
 
 interface Props {
   /** Nome de quem receberá o item (o próprio Mestre ou um jogador). */
@@ -26,6 +29,19 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
   const category = ITEM_SPRITE_CATEGORIES.find((c) => c.id === categoryId)
   const sprites = category?.sprites ?? customIcons.map((i) => ({ icon: i.dataUrl, label: 'Ícone personalizado' }))
   const [rarity, setRarity] = useState<ItemRarity>('common')
+  const [image, setImage] = useState<string | undefined>(undefined)
+  const [rawImage, setRawImage] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
+
+  const pick = async (source: ImageSource) => {
+    setPicking(true)
+    try {
+      const dataUrl = await pickImage(source)
+      if (dataUrl) setRawImage(dataUrl)
+    } finally {
+      setPicking(false)
+    }
+  }
   const [quantityText, setQuantityText] = useState('1')
   const quantity = Number.parseInt(quantityText, 10)
 
@@ -33,6 +49,7 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
     name,
     description,
     icon,
+    image,
     rarity,
     quantity: quantity >= 1 ? quantity : 1,
     maxStack: Math.max(quantity, 99),
@@ -43,6 +60,38 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
     e.preventDefault()
     if (!valid) return
     onForge(input)
+  }
+
+  if (rawImage) {
+    return (
+      <Modal title="🖼️ Imagem do item" onClose={() => setRawImage(null)}>
+        <ImageCropper
+          src={rawImage}
+          output={ITEM_IMAGE_SIZE}
+          frame={260}
+          renderActions={(crop, ready) => (
+            <div className="forge__actions">
+              <button type="button" className="btn" onClick={() => setRawImage(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn--gold"
+                disabled={!ready}
+                onClick={() => {
+                  const result = crop()
+                  if (!result) return
+                  setImage(result)
+                  setRawImage(null)
+                }}
+              >
+                ✓ Usar imagem
+              </button>
+            </div>
+          )}
+        />
+      </Modal>
+    )
   }
 
   return (
@@ -82,6 +131,32 @@ export function ItemCreationModal({ ownerName, slotIndex, onForge, onClose }: Pr
             maxLength={400}
           />
         </label>
+
+        <div className="field">
+          <span className="field__label">Imagem (opcional)</span>
+          {image ? (
+            <div className="forge__image">
+              <img src={image} alt="Imagem do item" draggable={false} />
+              <div className="forge__image-actions">
+                <button type="button" className="btn" disabled={picking} onClick={() => void pick('gallery')}>
+                  Trocar
+                </button>
+                <button type="button" className="btn btn--danger" onClick={() => setImage(undefined)}>
+                  Remover
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="forge__image-pick">
+              <button type="button" className="btn" disabled={picking} onClick={() => void pick('camera')}>
+                📸 Tirar foto
+              </button>
+              <button type="button" className="btn" disabled={picking} onClick={() => void pick('gallery')}>
+                🖼️ Galeria
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="field">
           <span className="field__label">Sprite</span>

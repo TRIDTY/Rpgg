@@ -71,3 +71,29 @@
   border-color: var(--danger, #ff6b6b);
   box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25);
 }
+
+.forge__image-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.forge__image {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.forge__image img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.forge__image-actions {
+  display: grid;
+  gap: 8px;
+}

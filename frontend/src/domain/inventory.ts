@@ -15,7 +15,7 @@ const descriptionOf = (item: Item) => (item.description ?? '').trim()
  * o mesmo nome e a mesma descrição e ambos são empilháveis.
  */
 export function canStack(a: Item, b: Item) {
-  return a.name === b.name && descriptionOf(a) === descriptionOf(b) && a.maxStack > 1 && b.maxStack > 1
+  return a.name === b.name && descriptionOf(a) === descriptionOf(b) && a.image === b.image && a.maxStack > 1 && b.maxStack > 1
 }
 
 /**
